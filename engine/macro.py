@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from . import config as C
+from .catalog import LAGS
 from .ts import change, change_z, clip, last, percentile, rnd, upto, value_at
 
 
@@ -55,7 +56,8 @@ class CurrencyRead:
     long_end: float | None = None
     curve_bp: float | None = None
     cpi: float | None = None
-    cpi_date: str | None = None
+    cpi_date: str | None = None         # when the model could first see it
+    cpi_period: str | None = None       # the month (or quarter) it describes
     cpi_3m_change: float | None = None
     cpi_gap: float | None = None
     real_policy: float | None = None
@@ -133,6 +135,8 @@ def read_currency(ccy: str, macro: pd.DataFrame, asof: pd.Timestamp,
     cpi_got = last(cpi, asof)
     if cpi_got:
         r.cpi, r.cpi_date = rnd(cpi_got[1], 2), _d(cpi_got[0])
+        period_end = cpi_got[0] - pd.Timedelta(days=LAGS.get(C.INFLATION[ccy], 0))
+        r.cpi_period = period_end.strftime("%b %Y")
         r.cpi_3m_change = rnd(change(cpi, C.LONG_DAYS, asof), 2)
         r.cpi_gap = rnd(cpi_got[1] - C.INFLATION_TARGET[ccy], 2)
         if r.policy is not None:

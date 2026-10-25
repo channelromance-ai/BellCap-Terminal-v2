@@ -17,7 +17,7 @@ except ImportError:
     yf = None
 
 
-def fetch(tickers: dict[str, str], period: str = "3y",
+def fetch(tickers: dict[str, str], period: str = "6y",
           today: pd.Timestamp | None = None
           ) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
     """{ticker: name} -> ({name: OHLC frame}, {name: error})."""

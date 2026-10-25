@@ -45,7 +45,7 @@ def parse(raw: bytes, name: str, today: pd.Timestamp | None = None) -> pd.DataFr
     return df[(df.index < today) & (df.index.dayofweek < 5)]
 
 
-def fetch(symbols: dict[str, str], days: int = 800
+def fetch(symbols: dict[str, str], days: int = 1600
           ) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
     """{symbol: name} -> ({name: OHLC frame}, {name: error})."""
     key = os.environ.get("TWELVEDATA_API_KEY")

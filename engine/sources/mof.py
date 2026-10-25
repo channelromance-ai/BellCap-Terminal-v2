@@ -25,7 +25,7 @@ def parse(raw: bytes) -> pd.DataFrame:
     return numeric_frame(df, TENORS)
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     out = pd.concat([parse(get(u, timeout=60)) for u in URLS])
     out = out[~out.index.duplicated(keep="last")].sort_index()
     return out[out.index >= pd.Timestamp.today() - pd.DateOffset(years=years)]

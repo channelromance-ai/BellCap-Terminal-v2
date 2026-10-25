@@ -14,8 +14,8 @@ import pandas as pd
 
 
 def upto(s: pd.Series | None, asof: pd.Timestamp) -> pd.Series:
-    if s is None:
-        return pd.Series(dtype=float)
+    if s is None:     # a missing series is empty, still indexed by date
+        return pd.Series(dtype=float, index=pd.DatetimeIndex([]))
     s = s.dropna()
     return s[s.index <= asof].sort_index()
 

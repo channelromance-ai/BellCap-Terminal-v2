@@ -31,6 +31,6 @@ def parse(raw: bytes) -> pd.DataFrame:
     return out.sort_index()
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     return parse(get(URL.format(areas="+".join(AREAS)), timeout=60, params={
         "startPeriod": years_back(years).isoformat(), "format": "csv"}))

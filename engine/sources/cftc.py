@@ -55,7 +55,7 @@ def parse(raw: bytes, report: tuple[str, str, str]) -> pd.DataFrame:
     return out
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     since = years_back(years).isoformat()
     frames = []
     for report in (TFF, DISAGG):

@@ -75,6 +75,42 @@ Every run builds one read, as of the latest closed session:
 
 Every weight is in `engine/config.py`, and every one is a hypothesis.
 
+## Track record and forecasts
+
+Every run also re-runs the model on the last session of every past week
+(about 4.5 years of history), using only what was public at the time: macro
+figures are held back until their national release date. Each past read is
+then set next to what prices did over the following week and month
+(`engine/edge.py`).
+
+A signal counts as proven only if t ≥ 2 overall and t ≥ 1.5, pointing the
+same way, in each half of the history. As of 2026-10-25 nothing passes. The
+forecast cone therefore shows the likely range (68% and 95%, from recent
+volatility) with a flat centre. If a signal ever passes, the cone leans on it
+automatically, shrunk according to how strong the evidence is.
+
+## The website (`web/`)
+
+A Bloomberg-style React app on Vercel with these pages: Overview, Pairs,
+Currencies, Markets, Rates, Calendar, Track record and Data health. Each
+pair, currency and market also has its own page. The page code is public;
+the data isn't. The site asks for a password, and its server reads the
+private data repo with a read-only token. Type a ticker into the yellow
+command line (`EURUSD`, `GOLD`, `USD`), or press 1–8.
+
+Vercel settings: Root Directory `web`, framework Vite. Environment
+variables:
+
+| Name | What |
+|---|---|
+| `BELLCAP_PASSWORD` | the password you type to log on |
+| `SESSION_SECRET` | any long random text; changing it logs every device out |
+| `GITHUB_DATA_TOKEN` | fine-grained token, **Contents: Read-only**, on `bellcap-v2-data` only |
+| `DATA_REPO` | `channelromance-ai/bellcap-v2-data` |
+
+To preview locally without a login (it reads `data/private`, which
+`python run.py update` writes): `cd web && npm install && npm run dev`.
+
 ## Running it
 
 In the cloud, **Update** runs on its own: weekdays at 06:00 Winnipeg time,

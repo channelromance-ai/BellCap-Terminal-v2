@@ -55,7 +55,7 @@ def parse_rates(raw: bytes) -> pd.DataFrame:
     return out.drop(columns=DISCONTINUED, errors="ignore").sort_index()
 
 
-def fetch(start: str = "2023-01") -> pd.DataFrame:
+def fetch(start: str = "2019-01") -> pd.DataFrame:
     params = {"startPeriod": start, "format": "csvfile"}
     cpi = parse_cpi(get(BASE + CPI.format(areas="+".join(CPI_AREAS)),
                         params=params, timeout=60))

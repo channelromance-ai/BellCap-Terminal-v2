@@ -44,14 +44,15 @@ def cmd_doctor() -> int:
 def cmd_update() -> int:
     """In GitHub Actions the run log is public, so this prints that a read was
     saved and nothing about what it says."""
-    from engine import doctor, model, store
+    from engine import doctor, update
     from engine.collect import collect
     data = collect()
     health = doctor.run(data=data)
-    snapshot, record = model.build(data, health)
-    where = store.save(snapshot, record)
-    print(f"read for {snapshot['asof']} saved to {where} "
-          f"(model {snapshot['model_version']}, health {health['summary']})")
+    summary = update.run(data, health, progress=lambda i, n, d: print(
+        f"  history rebuild {i}/{n}", flush=True))
+    print(f"read for {summary['asof']} saved (model {summary['model']}, "
+          f"{summary['history_reads']} weekly history reads, {summary['files']} files, "
+          f"health {summary['health']})")
     if not os.environ.get("GITHUB_ACTIONS"):
         return cmd_show()
     return 0

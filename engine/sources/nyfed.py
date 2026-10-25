@@ -24,7 +24,7 @@ def parse(raw: bytes, column: str) -> pd.Series:
     return s.sort_index()
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     params = {"startDate": years_back(years).isoformat(),
               "endDate": pd.Timestamp.today().date().isoformat()}
     effr = parse(get(URL.format(kind="unsecured", rate="effr"), params=params),

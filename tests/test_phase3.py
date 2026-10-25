@@ -1,0 +1,100 @@
+"""
+History rebuild, track record, forecast and thesis rules.
+
+    python -m unittest discover tests
+"""
+
+from __future__ import annotations
+
+import unittest
+
+import numpy as np
+import pandas as pd
+
+from engine import backtest, edge, forecast, thesis
+from engine.catalog import point_in_time
+from engine.collect import Collected
+
+DAYS = pd.bdate_range("2023-01-02", "2026-10-21")    # ends on a Wednesday
+
+
+def flat_bars(level=1.1):
+    s = pd.Series(level * np.exp(np.cumsum(np.random.default_rng(2).normal(0, .003, len(DAYS)))),
+                  index=DAYS)
+    return pd.DataFrame({f: s for f in ("open", "high", "low", "close")})
+
+
+class Rebuild(unittest.TestCase):
+    def test_only_finished_weeks_after_warmup(self):
+        majors = {n: flat_bars() for n in ("EURUSD", "GBPUSD", "USDJPY", "USDCHF",
+                                           "USDCAD", "AUDUSD", "NZDUSD")}
+        dates = backtest.read_dates(Collected(pd.DataFrame(), majors, {}, {}))
+        self.assertTrue(all(d.dayofweek == 4 for d in dates[:-1]))
+        self.assertLess(dates[-1], pd.Timestamp("2026-10-19"))   # this week left out
+        self.assertGreaterEqual(DAYS.get_loc(dates[0]), backtest.WARMUP_SESSIONS)
+
+    def test_point_in_time_delays_monthly_cpi(self):
+        macro = pd.DataFrame({"USD.CPI": pd.Series([3.0], index=[pd.Timestamp("2026-09-30")])})
+        pit = point_in_time(macro)
+        self.assertEqual(pit["USD.CPI"].dropna().index[0], pd.Timestamp("2026-10-15"))  # BLS releases ~15 days after month end
+
+
+class Proven(unittest.TestCase):
+    def test_needs_both_halves(self):
+        self.assertTrue(edge.proven({"t": 2.5, "t_halves": [1.8, 1.9]}))
+        self.assertFalse(edge.proven({"t": -2.09, "t_halves": [-0.27, -2.38]}))
+        self.assertFalse(edge.proven({"t": 2.5, "t_halves": [2.0, -1.6]}))
+        self.assertFalse(edge.proven({"t": 1.9, "t_halves": [1.8, 1.9]}))
+        self.assertFalse(edge.proven(None))
+
+
+class Forecast(unittest.TestCase):
+    def test_flat_cone_without_proven_signal(self):
+        close = flat_bars()["close"]
+        f = forecast.forecast("pair", {"macro_diff": 80, "residual_z": -2}, close,
+                              DAYS[-1], {"horizons": {"1m": {"pair_score": {"t": 1.0}}}})
+        c = f["1m"]
+        self.assertEqual(len(c["dates"]), 20)
+        self.assertEqual(c["centre"][0], c["centre"][-1])
+        self.assertIsNone(c["lean"])
+        self.assertLess(c["lo95"][-1], c["lo68"][-1])
+        self.assertGreater(c["hi68"][-1] - c["lo68"][-1], c["hi68"][0] - c["lo68"][0])
+
+    def test_proven_signal_tilts_but_is_shrunk(self):
+        close = flat_bars()["close"]
+        calib = {"horizons": {"1m": {"pair_score": {"t": 4.0, "t_halves": [3, 3], "slope": 0.5}}}}
+        drift, why = forecast.lean("pair", {"macro_diff": 100}, calib, "1m")
+        self.assertAlmostEqual(drift, 0.5 * 0.75)
+        self.assertIn("shrunk to 75%", why[0])
+        up = forecast.cone(close, DAYS[-1], 20, drift)
+        self.assertGreater(up["centre"][-1], up["centre"][0])
+
+
+class Thesis(unittest.TestCase):
+    def test_setup_is_on_the_right_side(self):
+        close = flat_bars()["close"]
+        long_ = thesis.setup(close, DAYS[-1], 1)
+        short = thesis.setup(close, DAYS[-1], -1)
+        self.assertLess(long_["stop"], long_["entry"])
+        self.assertLess(long_["entry"], long_["targets"][0])
+        self.assertGreater(short["stop"], short["entry"])
+        self.assertIsNone(thesis.setup(close, DAYS[-1], 0))
+
+    def test_crowded_positioning_in_the_lean_direction_argues_against(self):
+        ccy = {"EUR": {"ccy": "EUR", "score": 40, "quality": "daily", "cot_flag": "crowded long",
+                       "cot_pct": 95},
+               "USD": {"ccy": "USD", "score": -40, "quality": "daily", "cot_flag": None}}
+        p = {"pair": "EURUSD", "base": "EUR", "quote": "USD", "macro_diff": 80, "bias": "long",
+             "spread_3m_bp": 20, "spread_quality": "daily", "return_3m_pct": 1.0,
+             "residual_z": None, "link_corr": None, "rates_vs_price": "aligned",
+             "efficiency": 0.5}
+        card = thesis.pair_card(p, ccy, {"state": "normal"}, [], flat_bars()["close"],
+                                DAYS[-1], None)
+        self.assertEqual(card["lean"], "long")
+        self.assertTrue(any("crowded long" in x for x in card["against"]))
+        self.assertTrue(any("Rate gap" in x for x in card["for"]))
+        self.assertIsNotNone(card["setup"])
+
+
+if __name__ == "__main__":
+    unittest.main()

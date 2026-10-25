@@ -24,5 +24,5 @@ def parse(raw: bytes) -> pd.DataFrame:
     return numeric_frame(df, {k: v for k, v in SERIES.items() if k in df})
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     return parse(get(URL, params={"start_date": years_back(years).isoformat()}))

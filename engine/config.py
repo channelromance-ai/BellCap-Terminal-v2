@@ -7,7 +7,7 @@ eventually say which of them earned their place. Change a number, bump
 MODEL_VERSION, and the log keeps the old and new reads apart.
 """
 
-MODEL_VERSION = "2.0-macro.1"
+MODEL_VERSION = "2.0-macro.3"
 
 CCYS = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"]
 
@@ -70,5 +70,13 @@ VIX_STRESS_LEVEL = 25.0
 VIX_STRESS_PCT, VIX_CALM_PCT = 85, 25
 VIX_RISING_POINTS = 4.0
 
-# Pair macro bias needs at least this much score difference (scores run -100..100).
+# A macro bias needs at least this much score (difference, for pairs).
+# Scores run -100..100.
 PAIR_BIAS_MIN = 30
+ASSET_BIAS_MIN = 30
+
+# Swing setup template on thesis cards, in multiples of the average daily
+# move over 20 sessions. A template for planning, not a tested strategy.
+SETUP_ENTRY_PULLBACK = 0.5     # enter on a pullback against the lean
+SETUP_STOP_MOVES = 3.0
+SETUP_TARGETS_R = (1.5, 3.0)

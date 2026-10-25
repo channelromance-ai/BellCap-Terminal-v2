@@ -39,7 +39,7 @@ def _curve(kind: str, columns: dict[str, str], years: int) -> pd.DataFrame:
     return pd.concat(parts).sort_index()
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     nominal = _curve("daily_treasury_yield_curve", NOMINAL, years)
     real = _curve("daily_treasury_real_yield_curve", REAL, years)
     out = nominal.join(real, how="outer")

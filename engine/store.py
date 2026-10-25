@@ -11,6 +11,10 @@ same files land in data/private, which is gitignored.
   log/reads.jsonl         append-only: every run, never edited. Git history in
                           the private repo makes any later edit visible, which
                           is what lets the edge report be trusted.
+  history/<version>.json  the weekly history rebuild for that model version
+  edge.json               the track record the forecasts were gated by
+  health.json             data health for the site's health page
+  charts/...              one file per pair, asset and currency page
 """
 
 from __future__ import annotations
@@ -41,6 +45,24 @@ def save(snapshot: dict, record: dict) -> Path:
     return root
 
 
-def latest() -> dict | None:
-    p = private_dir() / "latest.json"
+def save_files(files: dict[str, object]) -> None:
+    """{relative path: JSON-able object} written under the private dir."""
+    root = private_dir()
+    for rel, obj in files.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_dump(obj))
+
+
+def history_path() -> str:
+    from .config import MODEL_VERSION
+    return f"history/{MODEL_VERSION}.json"
+
+
+def load_json(rel: str):
+    p = private_dir() / rel
     return json.loads(p.read_text()) if p.exists() else None
+
+
+def latest() -> dict | None:
+    return load_json("latest.json")

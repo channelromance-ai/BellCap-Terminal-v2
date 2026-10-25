@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from . import assets, fx, macro, pairs
+from .catalog import point_in_time
 from .collect import Collected
 from .config import MODEL_VERSION
 from .ts import rnd, upto
@@ -41,14 +42,18 @@ def calendar_rows(cal: pd.DataFrame | None, now: pd.Timestamp) -> list[dict]:
 
 
 def build(data: Collected, health: dict | None = None,
-          asof: pd.Timestamp | None = None) -> tuple[dict, dict]:
+          asof: pd.Timestamp | None = None, pit: pd.DataFrame | None = None
+          ) -> tuple[dict, dict]:
+    """`pit` is the point-in-time view of data.macro; the history rebuild
+    passes it in so it is computed once rather than once per read."""
     asof = asof or default_asof(data)
+    view = pit if pit is not None else point_in_time(data.macro)
     values = fx.usd_value(data.bars)
     closes = fx.pair_closes(values)
-    ccy_reads = macro.read_all(data.macro, asof, fx.strength(values))
-    pair_reads = pairs.read_all(ccy_reads, closes, data.macro, asof)
-    asset_reads = assets.read_all(data.macro, data.bars, fx.dollar_index(values), asof)
-    regime = assets.risk_regime(data.macro, asof)
+    ccy_reads = macro.read_all(view, asof, fx.strength(values))
+    pair_reads = pairs.read_all(ccy_reads, closes, view, asof)
+    asset_reads = assets.read_all(view, data.bars, fx.dollar_index(values), asof)
+    regime = assets.risk_regime(view, asof)
 
     last_close = {}
     for name, series in {**{k: v["close"] for k, v in data.bars.items()}, **closes}.items():

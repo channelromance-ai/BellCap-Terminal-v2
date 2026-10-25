@@ -36,7 +36,7 @@ def parse(raw: bytes, column: str) -> pd.Series:
     return s.sort_index()
 
 
-def fetch(months: int = 40) -> pd.DataFrame:
+def fetch(months: int = 80) -> pd.DataFrame:
     return pd.concat([parse(get(URL, params={
                           "geo": "EA", "unit": "RCH_A", "coicop18": code,
                           "lastTimePeriod": months}), col)

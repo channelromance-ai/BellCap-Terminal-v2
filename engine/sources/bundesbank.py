@@ -32,7 +32,7 @@ def parse(raw: bytes, column: str) -> pd.Series:
     return s.dropna().rename(column)
 
 
-def fetch(years: int = 3) -> pd.DataFrame:
+def fetch(years: int = 6) -> pd.DataFrame:
     start = years_back(years).isoformat()
     return pd.concat([parse(get(URL.format(key=key),
                                 params={"startPeriod": start, "format": "csv"}),
