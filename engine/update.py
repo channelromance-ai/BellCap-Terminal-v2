@@ -44,6 +44,10 @@ def run(data: Collected, health: dict, progress=None) -> dict:
 
     history = backtest.rebuild(data, store.load_json(store.history_path()), progress)
     calib = edge.calibrate(history, data)
+    # The live log graded the same way: reads the model actually published,
+    # never refit, so this is the out-of-sample record that matters most.
+    live = edge.weekly(store.load_log(), MODEL_VERSION)
+    calib["live"] = edge.calibrate(live, data) if live else None
 
     closes = edge.instrument_closes(data)
     forecasts = {}

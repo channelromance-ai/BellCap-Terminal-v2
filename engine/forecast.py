@@ -75,5 +75,6 @@ def forecast(kind: str, read: dict, close: pd.Series, asof, calib: dict | None) 
         c = cone(close, asof, sessions, drift)
         if c:
             c["lean"] = why or None
+            c["coverage"] = ((calib or {}).get("cone") or {}).get(label)
             out[label] = c
     return out

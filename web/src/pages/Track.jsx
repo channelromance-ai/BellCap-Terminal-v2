@@ -16,6 +16,36 @@ function verdict(s, req, half) {
   return ["no edge", "neg"];
 }
 
+// Reads the site actually published, graded once a week or month has passed.
+function Live({ live }) {
+  const rows = live ? Object.entries(live.horizons || {}).flatMap(([h, sigs]) =>
+    ["pair_score", "asset_score"].map((k) => [h, k, sigs[k] || {}])) : [];
+  const graded = rows.some(([, , s]) => s.signals);
+  return (
+    <Panel num={10} title="Live record" aside={live ? `${live.reads} published weeks since ${live.from}` : "nothing graded yet"}
+           bodyClass="scroll">
+      {graded ? (
+        <table className="t">
+          <thead><tr><th className="l">Signal</th><th className="l">Horizon</th><th>Right</th><th>Leans graded</th>
+            <th>Inside 68% range</th></tr></thead>
+          <tbody>
+            {rows.map(([h, k, s]) => (
+              <tr key={h + k}>
+                <td className="l amber">{SIGNALS[k]}</td>
+                <td className="l">{h === "1m" ? "1 month" : "1 week"}</td>
+                <td className="white">{isNum(s.hit) ? `${(s.hit * 100).toFixed(1)}%` : "-"}</td>
+                <td>{s.signals ?? 0}</td>
+                <td>{isNum(live.cone?.[h]?.inside68) ? `${(live.cone[h].inside68 * 100).toFixed(1)}%` : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : <div className="dim">Every run is logged. A lean can only be graded once its week or month has passed, so this fills in over time.</div>}
+      <div className="note">These are the leans the site actually showed, never refit, so this is the record to trust most once it grows.</div>
+    </Panel>
+  );
+}
+
 export default function Track({ snap }) {
   const tr = snap.track_record || {};
   const req = tr.t_required ?? 2;
@@ -48,6 +78,23 @@ export default function Track({ snap }) {
           </tbody>
         </table>
       </Panel>
+      <Live live={tr.live} />
+      <Panel num={9} title="Forecast range check" aside="did price finish inside the cone?" bodyClass="scroll">
+        <table className="t">
+          <thead><tr><th className="l">Horizon</th><th>Inside 68% band</th><th>Inside 95% band</th><th>Outcomes</th></tr></thead>
+          <tbody>
+            {Object.entries(tr.cone || {}).map(([h, c]) => (
+              <tr key={h}>
+                <td className="l amber">{h === "1m" ? "1 month" : "1 week"}</td>
+                <td className="white">{(c.inside68 * 100).toFixed(1)}%</td>
+                <td className="white">{(c.inside95 * 100).toFixed(1)}%</td>
+                <td>{c.n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="note">Close to 68% and 95% means the ranges are honest. Measured over the same history as the table above.</div>
+      </Panel>
       <Panel num={8} title="How to read this">
         <ul className="reasons notes">
           <li>Each week of history the model was re-run using only what was known then (macro data is held back
@@ -58,9 +105,14 @@ export default function Track({ snap }) {
             allowed to lean on it, because a run of luck in one stretch isn't an edge.</li>
           <li>Right = how often price moved the way the lean pointed (50% is a coin). Avg (SD) = average move in
             the lean's direction, in units of that market's own volatility.</li>
-          <li>Research ledger: on 2026-10-25, 13 further pre-registered signals (3- and 12-month trend,
-            rates-confirmed trend, weekly rate-gap change, fair value) were tested with a held-back period and
-            all failed. Next up: positioning extremes, rates only when a pair is linked, and a 3-month horizon.</li>
+          <li>Research ledger (rules fixed before each test; a signal needs t ≥ 2 before July 2024 and t ≥ 1.5
+            the same way after it). Round 1, 13 signals: 3- and 12-month trend, rates-confirmed trend, weekly
+            rate-gap change, fair value. Round 2, 9 signals: positioning extremes (pairs and markets),
+            rates only when a pair is linked to them, and a 3-month horizon. Round 3 re-tested the core
+            signals over 23 years (2003–2026, split mid-2015): all 7 failed; the asset score worked before
+            2015 (t 2.7) and not after (t 0.0). In total 35 tests, none adopted.</li>
+          <li>What did hold up: the forecast cone's ranges. Over those 23 years of weekly reads, price
+            finished inside the 68% band 70% of the time and inside the 95% band 94% of the time.</li>
         </ul>
       </Panel>
     </div>

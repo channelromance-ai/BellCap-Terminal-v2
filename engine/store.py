@@ -64,5 +64,10 @@ def load_json(rel: str):
     return json.loads(p.read_text()) if p.exists() else None
 
 
+def load_log() -> list[dict]:
+    p = private_dir() / "log" / "reads.jsonl"
+    return [json.loads(x) for x in p.read_text().splitlines() if x.strip()] if p.exists() else []
+
+
 def latest() -> dict | None:
     return load_json("latest.json")

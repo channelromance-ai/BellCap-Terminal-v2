@@ -18,8 +18,8 @@ import pandas as pd
 from unittest import mock
 
 from engine.sources import (bis, boc, bundesbank, cboe, cftc, eurostat,
-                            forexfactory, mof, nyfed, oecd, prices, treasury,
-                            twelvedata)
+                            forexfactory, fred, mof, nyfed, oecd, prices,
+                            treasury, twelvedata)
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -38,6 +38,19 @@ class Rates(unittest.TestCase):
     def test_treasury_real(self):
         df = treasury.parse(raw("treasury_real.csv"), treasury.REAL)
         self.assertEqual(df.loc["2026-10-23", "USD.REAL10Y"], 2.66)
+
+    def test_treasury_year_before_the_curve_existed_is_empty_not_an_error(self):
+        df = treasury.parse(b"", treasury.REAL)
+        self.assertTrue(df.empty)
+        self.assertEqual(list(df.columns), list(treasury.REAL.values()))
+
+    def test_fred_skips_missing_days(self):
+        body = {"observations": [{"date": "2026-10-21", "value": "1.12"},
+                                 {"date": "2026-10-22", "value": "."},
+                                 {"date": "2026-10-23", "value": "1.13"}]}
+        s = fred.parse(json.dumps(body).encode(), "DEXUSEU")
+        self.assertEqual(len(s), 2)
+        self.assertEqual(s.loc["2026-10-23"], 1.13)
 
     def test_bundesbank_german_number_format(self):
         s = bundesbank.parse(raw("bundesbank.csv"), "EUR.2Y")

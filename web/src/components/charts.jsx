@@ -79,7 +79,9 @@ export function PriceChart({ chart, digits = 5, height = 340 }) {
       {cone && (
         <div className="note">
           {horizon === "1m" ? "One-month" : "One-week"} range from recent volatility
-          ({cone.daily_vol_pct}% a day). {cone.lean
+          ({cone.daily_vol_pct}% a day).{cone.coverage
+            ? ` Past ranges like this held ${Math.round(cone.coverage.inside68 * 100)}% of the time (68% band) and ${Math.round(cone.coverage.inside95 * 100)}% (95% band).`
+            : ""} {cone.lean
             ? `Centre tilted by: ${cone.lean.join("; ")}.`
             : "Centre is flat: no signal has passed testing yet (see 7) Track record)."}
         </div>

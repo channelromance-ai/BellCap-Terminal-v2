@@ -24,6 +24,10 @@ REAL = {"5 YR": "USD.REAL5Y", "10 YR": "USD.REAL10Y"}
 
 
 def parse(raw: bytes, columns: dict[str, str]) -> pd.DataFrame:
+    """Years before a curve existed (real yields start in 2003) come back as
+    an empty file; that's an empty frame, not an error."""
+    if not raw.strip():
+        return pd.DataFrame(columns=list(columns.values()), index=pd.DatetimeIndex([], name="date"))
     df = read_csv(raw)
     df.index = pd.to_datetime(df.pop("Date"), format="%m/%d/%Y")
     return numeric_frame(df, {k: v for k, v in columns.items() if k in df})

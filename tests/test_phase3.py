@@ -39,6 +39,15 @@ class Rebuild(unittest.TestCase):
         self.assertEqual(pit["USD.CPI"].dropna().index[0], pd.Timestamp("2026-10-15"))  # BLS releases ~15 days after month end
 
 
+class LiveLog(unittest.TestCase):
+    def test_one_read_per_week_current_version_only(self):
+        log = [{"asof": "2026-10-20", "model_version": "v2", "n": 1},
+               {"asof": "2026-10-22", "model_version": "v2", "n": 2},   # same week, later
+               {"asof": "2026-10-22", "model_version": "v1", "n": 3},   # old model
+               {"asof": "2026-10-27", "model_version": "v2", "n": 4}]
+        self.assertEqual([r["n"] for r in edge.weekly(log, "v2")], [2, 4])
+
+
 class Proven(unittest.TestCase):
     def test_needs_both_halves(self):
         self.assertTrue(edge.proven({"t": 2.5, "t_halves": [1.8, 1.9]}))
