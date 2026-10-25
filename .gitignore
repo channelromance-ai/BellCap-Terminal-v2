@@ -1,0 +1,12 @@
+# Secrets. Keys live here locally and in GitHub secrets in the cloud - never in git.
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.pytest_cache/
+node_modules/
+dist/
