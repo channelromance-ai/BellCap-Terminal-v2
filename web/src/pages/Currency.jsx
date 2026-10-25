@@ -3,6 +3,7 @@ import { go } from "../router.js";
 import { LineChart } from "../components/charts.jsx";
 import { Failed, ImpactTag, Lean, Loading, Panel, Signed } from "../components/ui.jsx";
 import { COMPONENT_LABEL } from "./Currencies.jsx";
+import Headlines, { newsTags } from "../components/Headlines.jsx";
 
 export default function Currency({ snap, id }) {
   const c = snap.currencies.find((x) => x.ccy === id);
@@ -96,6 +97,7 @@ export default function Currency({ snap, id }) {
               </tbody>
             </table>
           </Panel>
+          <Headlines num={9} tags={newsTags("currency", id)} limit={10} />
           <Panel num={8} title="Events this week">
             {events.length ? (
               <table className="t"><tbody>

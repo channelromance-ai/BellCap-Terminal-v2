@@ -19,6 +19,11 @@ function localData() {
           res.setHeader("Content-Type", "application/json");
           return res.end('{"ok":true}');
         }
+        if (url.pathname === "/api/news") {
+          const { collect } = await import("./api/_feeds.js");
+          res.setHeader("Content-Type", "application/json");
+          return res.end(JSON.stringify(await collect()));
+        }
         if (url.pathname !== "/api/data") return next();
         const path = url.searchParams.get("path");
         if (!allowed(path)) {

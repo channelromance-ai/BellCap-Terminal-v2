@@ -1,6 +1,8 @@
 import { ASSET_LABEL, fmt, priceDigits, useJson } from "../data.js";
 import { LineChart, PriceChart } from "../components/charts.jsx";
 import Thesis from "../components/Thesis.jsx";
+import GoldRvol from "../components/GoldRvol.jsx";
+import Headlines, { newsTags } from "../components/Headlines.jsx";
 import { Failed, Loading, Panel, Signed } from "../components/ui.jsx";
 
 function PushBar({ v }) {
@@ -71,7 +73,11 @@ export default function Market({ snap, id }) {
               reference={{ y: 0, label: "" }} />}
           </Panel>
         </div>
-        <Thesis card={card} />
+        <div className="grid">
+          <Thesis card={card} ticket={snap.setups?.live.find((x) => x.name === id)} />
+          {id === "XAUUSD" && <GoldRvol num={5} />}
+          <Headlines num={6} tags={newsTags("market", id)} limit={10} />
+        </div>
       </div>
     </>
   );

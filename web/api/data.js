@@ -13,6 +13,7 @@ export const ALLOWED = [
   /^latest\.json$/,
   /^edge\.json$/,
   /^health\.json$/,
+  /^rvol\.json$/,
   /^charts\/[A-Z0-9]{2,8}\.json$/,
   /^charts\/ccy\/[A-Z]{3}\.json$/,
   /^snapshots\/\d{4}-\d{2}-\d{2}\.json$/,

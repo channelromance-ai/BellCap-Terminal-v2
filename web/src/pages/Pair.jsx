@@ -2,6 +2,7 @@ import { fmt, priceDigits, useJson } from "../data.js";
 import { href } from "../router.js";
 import { LineChart, PriceChart } from "../components/charts.jsx";
 import Thesis from "../components/Thesis.jsx";
+import Headlines, { newsTags } from "../components/Headlines.jsx";
 import { Failed, Loading, Panel, Signed } from "../components/ui.jsx";
 
 export default function Pair({ snap, id }) {
@@ -56,7 +57,10 @@ export default function Pair({ snap, id }) {
             </div>
           </Panel>
         </div>
-        <Thesis card={card} />
+        <div className="grid">
+          <Thesis card={card} ticket={snap.setups?.live.find((x) => x.name === id)} />
+          <Headlines num={6} tags={newsTags("pair", id)} limit={10} />
+        </div>
       </div>
     </>
   );

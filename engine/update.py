@@ -14,7 +14,9 @@ the forecasts were actually gated by.
 
 from __future__ import annotations
 
-from . import backtest, charts, edge, forecast, fx, model, store, thesis
+import pandas as pd
+
+from . import backtest, charts, edge, forecast, fx, model, setups, store, surprises, thesis
 from .collect import Collected
 from .config import MODEL_VERSION
 from .ts import rnd, upto
@@ -59,6 +61,11 @@ def run(data: Collected, health: dict, progress=None) -> dict:
             forecasts[a["name"]] = forecast.forecast("asset", a, closes[a["name"]], asof, calib)
 
     snapshot["ideas"] = thesis.build_cards(snapshot, closes, asof, calib)
+    tickets, graded = setups.update(store.load_json(setups.PATH), snapshot["ideas"],
+                                    data.bars, closes, asof)
+    snapshot["setups"] = {"record": setups.summary(graded),
+                          "live": [g for g in graded if g["status"] in ("pending", "open")],
+                          "recent": [g for g in graded if g["status"] in ("closed", "expired")][-15:]}
     snapshot["forecasts"] = {
         name: {h: {"centre": c["centre"][-1], "lo68": c["lo68"][-1], "hi68": c["hi68"][-1],
                    "lo95": c["lo95"][-1], "hi95": c["hi95"][-1], "lean": c["lean"],
@@ -75,7 +82,10 @@ def run(data: Collected, health: dict, progress=None) -> dict:
     files = charts.build(snapshot, closes, data.macro, fx.strength(fx.usd_value(data.bars)),
                          asof, shown, forecasts)
     files.update({"edge.json": calib, "health.json": health,
-                  store.history_path(): history})
+                  store.history_path(): history,
+                  setups.PATH: tickets,
+                  surprises.PATH: surprises.merge(store.load_json(surprises.PATH), data.calendar,
+                                                  pd.Timestamp.now(tz="UTC"))})
     store.save(snapshot, record)
     store.save_files(files)
     return {"asof": snapshot["asof"], "model": MODEL_VERSION, "history_reads": len(history),

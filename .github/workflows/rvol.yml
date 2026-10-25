@@ -1,0 +1,56 @@
+# Hourly gold RVOL, saved to the private repo. Free and unlimited on a public
+# repo. Runs every hour Sunday-Friday (UTC); hours outside the gold session
+# write nothing. The log only ever says "rvol: ok / unavailable / closed",
+# never the numbers. If Yahoo blocks GitHub, readings say "unavailable".
+name: Gold RVOL
+
+on:
+  schedule:
+    - cron: "5 * * * 0-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bellcap-rvol
+  cancel-in-progress: true
+
+jobs:
+  rvol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check out the private data repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository_owner }}/bellcap-v2-data
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: private
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: python -m engine.rvol
+
+      - name: Read gold volume
+        env:
+          BELLCAP_PRIVATE_DIR: private
+        run: python run.py rvol
+
+      - name: Commit to the private repo
+        working-directory: private
+        run: |
+          git config user.name "bellcap-bot"
+          git config user.email "actions@github.com"
+          git add -A
+          git diff --staged --quiet && exit 0
+          git commit -q -m "rvol $(date -u +%Y-%m-%dT%H:%MZ)"
+          # The Update job may have pushed meanwhile; different files, so rebase is clean.
+          git pull -q --rebase && git push -q

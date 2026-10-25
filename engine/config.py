@@ -80,3 +80,7 @@ ASSET_BIAS_MIN = 30
 SETUP_ENTRY_PULLBACK = 0.5     # enter on a pullback against the lean
 SETUP_STOP_MOVES = 3.0
 SETUP_TARGETS_R = (1.5, 3.0)
+
+# Hourly gold RVOL (GLD, US session). Same rule as v1.
+RVOL_THRESHOLD = 1.5        # flag an hour at >= 1.5x its usual volume
+RVOL_BASELINE_DAYS = 15     # same hour, previous 15 trading days

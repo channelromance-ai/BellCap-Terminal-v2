@@ -28,7 +28,7 @@ test("cookie parsing", () => {
 });
 
 test("only the site's files can be read", () => {
-  for (const ok of ["latest.json", "edge.json", "health.json", "charts/EURUSD.json",
+  for (const ok of ["latest.json", "edge.json", "health.json", "rvol.json", "charts/EURUSD.json",
                     "charts/XAUUSD.json", "charts/ccy/USD.json", "snapshots/2026-10-23.json"]) {
     assert.ok(allowed(ok), ok);
   }
@@ -36,4 +36,25 @@ test("only the site's files can be read", () => {
                      "charts/../log/reads.jsonl", ".git/config", "README.md", undefined]) {
     assert.ok(!allowed(bad), String(bad));
   }
+});
+
+import { parse, tagsFor } from "./_feeds.js";
+
+test("headlines are tagged with the markets they move", () => {
+  assert.deepEqual(tagsFor("Oil jumps as Iran missiles hit Saudi facility").sort(), ["OIL", "RISK"]);
+  assert.ok(tagsFor("EUR/USD slips after ECB's Lagarde").includes("EUR"));
+  assert.ok(tagsFor("EUR/USD slips after ECB's Lagarde").includes("USD"));
+  assert.ok(tagsFor("BoJ holds, yen weakens").includes("JPY"));
+  assert.deepEqual(tagsFor("Let us know what you think"), []);   // "us" isn't USD
+});
+
+test("RSS and Google News items parse, unsafe links dropped", () => {
+  const xml = `<rss><item><title><![CDATA[Crude rises &amp; OPEC meets - Reuters]]></title>
+    <link>https://example.com/a</link><pubDate>Sun, 25 Oct 2026 12:00:00 GMT</pubDate></item>
+    <item><title>Bad link</title><link>javascript:alert(1)</link><pubDate>Sun, 25 Oct 2026 12:00:00 GMT</pubDate></item></rss>`;
+  const [a, b] = parse(xml, "Google News: oil");
+  assert.equal(a.title, "Crude rises & OPEC meets");
+  assert.equal(a.source, "Reuters");
+  assert.ok(a.tags.includes("OIL"));
+  assert.equal(b.link, null);
 });

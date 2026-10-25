@@ -46,6 +46,41 @@ function Live({ live }) {
   );
 }
 
+// The swing template tickets the cards showed, graded like real orders.
+function Tickets({ s }) {
+  const r = s?.record;
+  return (
+    <Panel num={11} title="Swing template record"
+           aside={r ? `${r.tickets} tickets · ${r.filled} filled · ${r.pending} waiting · ${r.expired} expired` : "none yet"}
+           bodyClass="scroll">
+      {r?.targets?.some((x) => x.resolved) ? (
+        <table className="t">
+          <thead><tr><th className="l">Target</th><th>Resolved</th><th>Reached before stop</th><th>Average R</th></tr></thead>
+          <tbody>{r.targets.map((x) => (
+            <tr key={x.r}><td className="l amber">{x.r}R</td><td>{x.resolved}</td>
+              <td className="white">{isNum(x.hit) ? `${(x.hit * 100).toFixed(1)}%` : "-"}</td>
+              <td className={x.avg_r > 0 ? "pos" : "neg"}>{fmt(x.avg_r)}</td></tr>))}
+          </tbody>
+        </table>
+      ) : <div className="dim">Every ticket shown on a thesis card is logged. Results appear once tickets fill and hit a stop or target.</div>}
+      {s?.live?.length > 0 && (
+        <table className="t" style={{ marginTop: 6 }}>
+          <thead><tr><th className="l">Live ticket</th><th className="l">Side</th><th className="l">Issued</th>
+            <th>Entry</th><th>Stop</th><th className="l">Status</th></tr></thead>
+          <tbody>{s.live.map((t) => (
+            <tr key={t.name + t.issued}><td className="l name">{t.name}</td><td className="l">{t.side}</td>
+              <td className="l dim">{t.issued}</td><td>{t.entry}</td><td className="neg">{t.stop}</td>
+              <td className="l">{t.status}{t.basis === "close" ? " (close basis)" : ""}</td></tr>))}
+          </tbody>
+        </table>
+      )}
+      <div className="note">Entry is a limit at the pullback level (expires after 5 sessions). Each target is graded
+        on its own against the stop; a bar touching both counts as the stop; anything open 20 sessions after
+        filling closes at that day's price. Crosses are graded on closing prices only.</div>
+    </Panel>
+  );
+}
+
 export default function Track({ snap }) {
   const tr = snap.track_record || {};
   const req = tr.t_required ?? 2;
@@ -79,6 +114,7 @@ export default function Track({ snap }) {
         </table>
       </Panel>
       <Live live={tr.live} />
+      <Tickets s={snap.setups} />
       <Panel num={9} title="Forecast range check" aside="did price finish inside the cone?" bodyClass="scroll">
         <table className="t">
           <thead><tr><th className="l">Horizon</th><th>Inside 68% band</th><th>Inside 95% band</th><th>Outcomes</th></tr></thead>
@@ -110,7 +146,7 @@ export default function Track({ snap }) {
             rate-gap change, fair value. Round 2, 9 signals: positioning extremes (pairs and markets),
             rates only when a pair is linked to them, and a 3-month horizon. Round 3 re-tested the core
             signals over 23 years (2003–2026, split mid-2015): all 7 failed; the asset score worked before
-            2015 (t 2.7) and not after (t 0.0). In total 35 tests, none adopted.</li>
+            2015 (t 2.7) and not after (t 0.0). Round 4 tested drift after 415 central bank rate moves (2002–2026): whether currencies keep moving the way they first reacted, the way 2-year yields reacted, or the way of the hike or cut. All 6 failed. In total 41 tests, none adopted.</li>
           <li>What did hold up: the forecast cone's ranges. Over those 23 years of weekly reads, price
             finished inside the 68% band 70% of the time and inside the 95% band 94% of the time.</li>
         </ul>

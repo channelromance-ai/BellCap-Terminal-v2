@@ -111,6 +111,16 @@ variables:
 To preview locally without a login (it reads `data/private`, which
 `python run.py update` writes): `cd web && npm install && npm run dev`.
 
+## Gold RVOL
+
+Every hour of the gold session, **Gold RVOL** compares the hour that just
+finished with the same hour over the previous 15 trading days, and flags
+1.5x or more. It uses COMEX gold futures from Yahoo, with the front two
+contracts summed so contract rolls don't distort it (v1's verified method).
+Yahoo throttles cloud machines, so if it blocks a run the panel says
+"unavailable" rather than showing a number. It's an observation only and
+never feeds a score.
+
 ## Running it
 
 In the cloud, **Update** runs on its own: weekdays at 06:00 Winnipeg time,

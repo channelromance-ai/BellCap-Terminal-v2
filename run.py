@@ -95,7 +95,25 @@ def cmd_show() -> int:
     return 0
 
 
-COMMANDS = {"update": cmd_update, "show": cmd_show, "doctor": cmd_doctor}
+def cmd_rvol() -> int:
+    """Hourly gold RVOL into the private repo: rvol.json for the site, and an
+    append-only log so the readings can be judged later. Closed hours write
+    nothing, so the hourly job only commits during the gold session."""
+    import json
+    from engine import rvol, store
+    r = rvol.reading()
+    print("rvol:", r["status"], r.get("detail", ""))
+    if r["status"] == "closed":
+        return 0
+    store.save_files({"rvol.json": r})
+    log = store.private_dir() / "log" / "rvol.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with open(log, "a", encoding="utf-8") as f:
+        f.write(json.dumps({k: r.get(k) for k in ("generated_at", "status", "latest")}) + "\n")
+    return 0
+
+
+COMMANDS = {"update": cmd_update, "show": cmd_show, "doctor": cmd_doctor, "rvol": cmd_rvol}
 
 if __name__ == "__main__":
     load_env()

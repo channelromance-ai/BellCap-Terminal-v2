@@ -1,6 +1,8 @@
 import { ASSET_LABEL, fmt, fmtTime, isNum } from "../data.js";
 import { go, href } from "../router.js";
 import { Lean, Panel, ScoreBar, Signed, Spark } from "../components/ui.jsx";
+import GoldRvol from "../components/GoldRvol.jsx";
+import Headlines from "../components/Headlines.jsx";
 
 // Every pair and asset with a bias, strongest first.
 export function leans(snap) {
@@ -160,8 +162,10 @@ export default function Home({ snap }) {
       <MainSignals snap={snap} />
       <div className="grid">
         <Regime r={snap.regime} />
+        <GoldRvol num={7} />
         <DataPanel snap={snap} />
       </div>
+      <Headlines num={8} className="span-all" limit={14} />
       <CurrencyBoard snap={snap} />
       <MarketsPanel snap={snap} />
       <WeekAhead snap={snap} />

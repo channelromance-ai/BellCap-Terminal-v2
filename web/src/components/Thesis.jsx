@@ -22,7 +22,20 @@ function TrackLine({ record }) {
   );
 }
 
-export default function Thesis({ card, num = 2 }) {
+function TicketLine({ t }) {
+  if (!t) return null;
+  const what = t.status === "pending"
+    ? `waiting for entry at ${t.entry} (issued ${t.issued}, expires after 5 sessions)`
+    : `filled at ${t.entry} on ${t.filled}; ` + t.results.map((r, i) =>
+        `${t.targets_r[i]}R target ${r == null ? "open" : r > 0 ? `hit (+${r}R)` : `${r}R`}`).join(", ");
+  return (
+    <div className="note" style={{ padding: "4px 0 0" }}>
+      <span className="amber">Logged ticket ({t.side}, {t.basis} basis):</span> {what}.
+    </div>
+  );
+}
+
+export default function Thesis({ card, ticket, num = 2 }) {
   if (!card) return <Panel num={num} title="Thesis"><div className="dim">No card for this market.</div></Panel>;
   const s = card.setup;
   return (
@@ -66,6 +79,7 @@ export default function Thesis({ card, num = 2 }) {
             <span className="k">Avg daily move</span><span className="v">{s.daily_move}</span>
           </div>
           <div className="note" style={{ padding: "4px 0 0" }}>{s.label}. Sized from volatility, not from the model.</div>
+          <TicketLine t={ticket} />
         </>
       )}
 

@@ -44,7 +44,10 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Offline tests
-        run: python -m unittest discover tests
+        run: |
+          python -m unittest discover tests
+          python -m engine.surprises
+          python -m engine.setups
 
       - name: Fetch, score and save
         env:
@@ -62,6 +65,7 @@ jobs:
             echo "nothing new"
           else
             git commit -q -m "read $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull -q --rebase   # the hourly RVOL job may have pushed meanwhile
             git push -q
             echo "saved"
           fi
