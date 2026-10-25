@@ -5,13 +5,13 @@
 # cloud, and this job proves it. Results show on the run's Summary page as a
 # table; health.json is attached as a download.
 #
-# Run it by hand: Actions tab > "Data health" > Run workflow.
+# Run it by hand: Actions tab > "Data health" > Run workflow. The scheduled
+# Update job writes the same health table on every run, so this one is only
+# for checking sources without saving a read.
 name: Data health
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 12 * * 1-5"     # weekdays 12:00 UTC (07:00 Winnipeg)
 
 permissions:
   contents: read

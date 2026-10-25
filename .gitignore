@@ -11,3 +11,6 @@ __pycache__/
 node_modules/
 dist/
 data/
+
+# The private data repo is checked out here in CI. Never commit it into this one.
+private/

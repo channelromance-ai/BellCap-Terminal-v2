@@ -1,0 +1,82 @@
+# The scheduled read. Runs on GitHub's machines (free and unlimited on a
+# public repo), saves into the PRIVATE repo bellcap-v2-data.
+#
+# This repo is public, and so is this job's log. So the engine prints only
+# that a read was saved, the Summary page shows data health only, and the
+# reads themselves go straight into the private repo.
+#
+# Needs two secrets: TWELVEDATA_API_KEY and DATA_REPO_TOKEN (a fine-grained
+# token with Contents read/write on bellcap-v2-data only).
+name: Update
+
+on:
+  schedule:
+    - cron: "0 11 * * 1-6"    # 06:00 Winnipeg, Mon-Sat: yesterday's full closes
+    - cron: "30 23 * * 1-5"   # evening: same-day yields, policy and COT
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bellcap-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check out the private data repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository_owner }}/bellcap-v2-data
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: private
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Offline tests
+        run: python -m unittest discover tests
+
+      - name: Fetch, score and save
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          BELLCAP_PRIVATE_DIR: private
+        run: python run.py update
+
+      - name: Commit to the private repo
+        working-directory: private
+        run: |
+          git config user.name "bellcap-bot"
+          git config user.email "actions@github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "nothing new"
+          else
+            git commit -q -m "read $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push -q
+            echo "saved"
+          fi
+
+      - name: Warn before the data token expires
+        if: always()
+        env:
+          TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          REPO: ${{ github.repository_owner }}/bellcap-v2-data
+        run: |
+          exp=$(curl -sI -H "Authorization: Bearer $TOKEN" "https://api.github.com/repos/$REPO" \
+                | grep -i '^github-authentication-token-expiration:' | cut -d' ' -f2- | tr -d '\r')
+          if [ -z "$exp" ]; then echo "token has no expiry date"; exit 0; fi
+          days=$(( ( $(date -d "$exp" +%s) - $(date +%s) ) / 86400 ))
+          echo "DATA_REPO_TOKEN expires in $days days ($exp)"
+          if [ "$days" -lt 30 ]; then
+            echo "::warning::DATA_REPO_TOKEN expires in $days days. Make a new one (same settings) and replace the secret."
+          fi

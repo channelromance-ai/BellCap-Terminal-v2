@@ -57,16 +57,39 @@ during setup downloaded perfectly and had stopped updating months earlier.
 The known gaps are listed in `engine/catalog.py` and printed in every health
 report.
 
+## The read
+
+Every run builds one read, as of the latest closed session:
+
+- **Currencies (8):** policy rate and last move; what the market prices next
+  (front-end rate minus policy rate); how fast that's moving; inflation
+  against the bank's own target; real policy rate; positioning extremes.
+  Rate moves are judged against each rate's own normal moves, because a
+  3-month rate and a 2-year yield move by very different amounts.
+- **Pairs (28):** score gap, rate gap and its momentum, and whether price is
+  following rates. Where both legs have daily yields: how tightly the pair
+  is trading on rates, and where rates alone would put it (fair value).
+- **Gold, silver, indices, oil:** each driver's push, plus its actual recent
+  correlation, so a textbook driver that has stopped working is visible.
+- **Risk regime** from VIX, and **this week's events**.
+
+Every weight is in `engine/config.py`, and every one is a hypothesis.
+
 ## Running it
 
-In the cloud: on GitHub, open **Actions → Data health → Run workflow**. The
-run's Summary page shows the full health table.
+In the cloud, **Update** runs on its own: weekdays at 06:00 Winnipeg time,
+Saturdays for Friday's closes, and each weekday evening. Each read is saved
+to the private repo `bellcap-v2-data`. You can also start it from
+**Actions → Update → Run workflow**. **Data health** is a manual source check
+that saves nothing.
 
 On your PC (optional):
 
 ```
 pip install -r requirements.txt
-python run.py doctor
+python run.py update      # fetch, score, save to data/private, print the read
+python run.py show        # print the last saved read again
+python run.py doctor      # source check only
 python -m unittest discover tests
 ```
 
