@@ -1,7 +1,7 @@
 {
- "checked_at": "2026-10-25T13:38:15+00:00",
+ "checked_at": "2026-10-25T16:00:37+00:00",
  "summary": {
-  "ok": 63
+  "ok": 72
  },
  "sources": [
   {
@@ -14,67 +14,67 @@
    "source": "nyfed",
    "ok": true,
    "error": null,
-   "seconds": 0.8
+   "seconds": 1.0
   },
   {
    "source": "cboe",
    "ok": true,
    "error": null,
-   "seconds": 0.7
+   "seconds": 1.1
   },
   {
    "source": "bundesbank",
    "ok": true,
    "error": null,
-   "seconds": 1.5
+   "seconds": 2.7
   },
   {
    "source": "ecb",
    "ok": true,
    "error": null,
-   "seconds": 2.5
+   "seconds": 2.4
   },
   {
    "source": "eurostat",
    "ok": true,
    "error": null,
-   "seconds": 1.6
+   "seconds": 1.8
   },
   {
    "source": "mof",
    "ok": true,
    "error": null,
-   "seconds": 2.9
+   "seconds": 3.9
   },
   {
    "source": "boc",
    "ok": true,
    "error": null,
-   "seconds": 0.3
+   "seconds": 0.4
   },
   {
    "source": "bis",
    "ok": true,
    "error": null,
-   "seconds": 1.1
+   "seconds": 1.7
   },
   {
    "source": "oecd",
    "ok": true,
    "error": null,
-   "seconds": 0.5
+   "seconds": 1.5
   },
   {
    "source": "cftc",
    "ok": true,
    "error": null,
-   "seconds": 1.7
+   "seconds": 1.2
   },
   {
-   "source": "twelvedata",
+   "source": "prices",
    "ok": true,
    "error": null,
-   "seconds": 60.1
+   "seconds": 134.6
   }
  ],
  "series": [
@@ -739,113 +739,219 @@
    "max_age": 10
   },
   {
-   "id": "PX.EURUSD",
+   "id": "EURUSD",
    "name": "EURUSD daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 688,
    "last_date": "2026-10-23",
-   "last_value": 1.1195,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.GBPUSD",
+   "id": "GBPUSD",
    "name": "GBPUSD daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 678,
    "last_date": "2026-10-23",
-   "last_value": 1.3372,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.USDJPY",
+   "id": "USDJPY",
    "name": "USDJPY daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 670,
    "last_date": "2026-10-23",
-   "last_value": 156.8474,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.USDCHF",
+   "id": "USDCHF",
    "name": "USDCHF daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 664,
    "last_date": "2026-10-23",
-   "last_value": 0.8252,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.USDCAD",
+   "id": "USDCAD",
    "name": "USDCAD daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 651,
    "last_date": "2026-10-23",
-   "last_value": 1.4008,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.AUDUSD",
+   "id": "AUDUSD",
    "name": "AUDUSD daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 650,
    "last_date": "2026-10-23",
-   "last_value": 0.7037,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.NZDUSD",
+   "id": "NZDUSD",
    "name": "NZDUSD daily price",
-   "group": "prices",
+   "group": "fx",
    "source": "twelvedata",
    "status": "ok",
    "points": 650,
    "last_date": "2026-10-23",
-   "last_value": 0.57,
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   },
   {
-   "id": "PX.XAUUSD",
+   "id": "XAUUSD",
    "name": "XAUUSD daily price",
-   "group": "prices",
+   "group": "metals",
    "source": "twelvedata",
    "status": "ok",
    "points": 632,
    "last_date": "2026-10-23",
-   "last_value": 4000.8826,
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "XAGUSD",
+   "name": "XAGUSD daily price",
+   "group": "metals",
+   "source": "twelvedata (SLV ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "WTI",
+   "name": "WTI daily price",
+   "group": "energy",
+   "source": "twelvedata (USO ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "BRENT",
+   "name": "BRENT daily price",
+   "group": "energy",
+   "source": "twelvedata (BNO ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "NAS100",
+   "name": "NAS100 daily price",
+   "group": "indices",
+   "source": "twelvedata (QQQ ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "US500",
+   "name": "US500 daily price",
+   "group": "indices",
+   "source": "twelvedata (SPY ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "US30",
+   "name": "US30 daily price",
+   "group": "indices",
+   "source": "twelvedata (DIA ETF)",
+   "status": "ok",
+   "points": 800,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "GER40",
+   "name": "GER40 daily price",
+   "group": "indices",
+   "source": "twelvedata (DAX ETF in EUR)",
+   "status": "ok",
+   "points": 664,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "UK100",
+   "name": "UK100 daily price",
+   "group": "indices",
+   "source": "twelvedata (EWU ETF in GBP)",
+   "status": "ok",
+   "points": 654,
+   "last_date": "2026-10-23",
+   "last_value": null,
+   "age_days": 2,
+   "max_age": 5
+  },
+  {
+   "id": "JP225",
+   "name": "JP225 daily price",
+   "group": "indices",
+   "source": "twelvedata (EWJ (MSCI Japan) in JPY)",
+   "status": "ok",
+   "points": 646,
+   "last_date": "2026-10-23",
+   "last_value": null,
    "age_days": 2,
    "max_age": 5
   }
  ],
+ "price_errors": {},
  "calendar": {
   "ok": true,
   "events": 96,
-  "high_impact": 23,
-  "first": "2026-10-25T19:00:00+00:00",
-  "last": "2026-10-31T01:30:00+00:00"
+  "high_impact": 23
  },
  "gaps": {
-  "GBP.2Y / AUD.2Y / NZD.2Y daily": "Publishers (BoE, RBA, RBNZ) refuse non-browser requests; monthly OECD rates stand in. Awaiting a decision on how to source these.",
-  "CHF.2Y daily": "SNB stopped publishing daily Confederation yields in July 2025.",
-  "JPY.CPI / CHF.CPI": "OECD copies are stale; national publishers not wired in yet (phase 2).",
-  "Silver, oil, index prices": "Not on Twelve Data's free plan; source pending a decision."
+  "GBP / AUD / NZD daily yields": "BoE, RBA and RBNZ refuse non-browser requests. Decided 2026-10-25: use the monthly OECD 10y (and 3m where it exists) instead of disguising requests.",
+  "CHF daily yields": "SNB stopped publishing daily Confederation yields in July 2025; monthly OECD rates stand in.",
+  "JPY / CHF inflation": "OECD copies are stale; national publishers not wired in yet."
  }
 }

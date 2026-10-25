@@ -15,8 +15,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from unittest import mock
+
 from engine.sources import (bis, boc, bundesbank, cboe, cftc, eurostat,
-                            forexfactory, mof, nyfed, oecd, treasury,
+                            forexfactory, mof, nyfed, oecd, prices, treasury,
                             twelvedata)
 
 FIX = Path(__file__).parent / "fixtures"
@@ -107,12 +109,37 @@ class Markets(unittest.TestCase):
         df = twelvedata.parse(json.dumps(body).encode(), "EURUSD",
                               today=pd.Timestamp("2026-10-26", tz="UTC"))
         self.assertEqual(list(df.index.strftime("%Y-%m-%d")), ["2026-10-22", "2026-10-23"])
-        self.assertEqual(df[("EURUSD", "close")].iloc[-1], 1.5)
+        self.assertEqual(df["close"].iloc[-1], 1.5)
 
     def test_twelvedata_error_is_raised_not_parsed(self):
         body = {"status": "error", "message": "plan limit"}
         with self.assertRaises(Exception):
             twelvedata.parse(json.dumps(body).encode(), "XAGUSD")
+
+    def test_usd_listed_etf_converted_to_home_currency(self):
+        days = pd.to_datetime(["2026-10-21", "2026-10-22", "2026-10-23"])
+        etf = pd.DataFrame({f: [44.0, 44.0, 44.0] for f in
+                            ("open", "high", "low", "close")}, index=days)
+        eurusd = pd.Series([1.10, 1.10], index=days[1:])     # 21st missing
+        out = prices.to_home_currency(etf, eurusd, "div")
+        self.assertEqual(len(out), 2)                       # no guessed FX day
+        self.assertAlmostEqual(out["close"].iloc[-1], 40.0)
+
+    def test_backup_replaces_whole_history_and_is_labelled(self):
+        idx = pd.to_datetime(["2026-10-22", "2026-10-23"])
+        bar = pd.DataFrame({f: [1.0, 1.0] for f in ("open", "high", "low", "close")},
+                           index=idx)
+        td = ({i.name: bar for i in prices.INSTRUMENTS if i.name != "NAS100"},
+              {"NAS100": "Twelve Data NAS100: plan limit"})
+        yh = ({"NAS100": bar * 20000}, {})
+        with mock.patch.object(prices.twelvedata, "fetch", return_value=td), \
+             mock.patch.object(prices.yahoo, "fetch", return_value=yh) as backup:
+            bars, sources, errors = prices.fetch()
+        backup.assert_called_once_with({"^NDX": "NAS100"})
+        self.assertEqual(sources["NAS100"], "yahoo (^NDX)")
+        self.assertEqual(bars["NAS100"]["close"].iloc[-1], 20000)
+        self.assertEqual(sources["US500"], "twelvedata (SPY ETF)")
+        self.assertEqual(errors, {})
 
     def test_calendar(self):
         df = forexfactory.parse(raw("ff.json"))

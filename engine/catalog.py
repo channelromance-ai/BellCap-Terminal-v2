@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .sources import (bis, boc, bundesbank, cboe, cftc, ecb, eurostat, mof,
-                      nyfed, oecd, treasury, twelvedata)
+                      nyfed, oecd, prices, treasury)
 
 
 @dataclass(frozen=True)
@@ -62,18 +62,19 @@ SOURCES = {
              if f"{c}.{t}_M" not in oecd.DISCONTINUED],
     cftc: [Spec(col, f"{col[4:]} speculative net % OI", "positioning", 10)
            for col in cftc.MARKETS],
-    twelvedata: [Spec(f"PX.{n}", f"{n} daily price", "prices", 5)
-                 for n in twelvedata.SYMBOLS.values()],
 }
 
+# Prices are fetched by sources/prices.py (Twelve Data, Yahoo backup), not
+# per module, so they are listed separately.
+PRICES = [Spec(i.name, f"{i.name} daily price", i.group, 5)
+          for i in prices.INSTRUMENTS]
+
 GAPS = {
-    "GBP.2Y / AUD.2Y / NZD.2Y daily": "Publishers (BoE, RBA, RBNZ) refuse "
-        "non-browser requests; monthly OECD rates stand in. Awaiting a "
-        "decision on how to source these.",
-    "CHF.2Y daily": "SNB stopped publishing daily Confederation yields in "
-        "July 2025.",
-    "JPY.CPI / CHF.CPI": "OECD copies are stale; national publishers not "
-        "wired in yet (phase 2).",
-    "Silver, oil, index prices": "Not on Twelve Data's free plan; source "
-        "pending a decision.",
+    "GBP / AUD / NZD daily yields": "BoE, RBA and RBNZ refuse non-browser "
+        "requests. Decided 2026-10-25: use the monthly OECD 10y (and 3m "
+        "where it exists) instead of disguising requests.",
+    "CHF daily yields": "SNB stopped publishing daily Confederation yields "
+        "in July 2025; monthly OECD rates stand in.",
+    "JPY / CHF inflation": "OECD copies are stale; national publishers not "
+        "wired in yet.",
 }

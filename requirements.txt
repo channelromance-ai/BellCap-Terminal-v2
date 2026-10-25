@@ -2,3 +2,7 @@ pandas>=2.2
 numpy>=1.26
 requests>=2.31
 openpyxl>=3.1
+
+# Backup price source only. Optional: if it fails to install, Twelve Data
+# still runs and a failed instrument is simply reported missing.
+yfinance>=1.0

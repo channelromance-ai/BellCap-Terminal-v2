@@ -1,12 +1,12 @@
 """
-Daily prices from Twelve Data's official API, on the free plan.
+Daily bars from Twelve Data's official API, on the free plan.
 
-The free plan covers FX and spot gold, which is what this pulls: the seven
-USD majors (the 21 crosses are rebuilt from these downstream) and XAU/USD.
-Silver, oil and the indices need a paid plan, so they don't come from here.
+The free plan covers FX, spot gold and US-listed ETFs. Silver, oil and the
+indices need a paid plan, so prices.py uses ETFs as stand-ins for those.
 
-Limits: 8 credits a minute and 800 a day, one credit per symbol. A full pull
-is 8 credits, spaced to stay under the per-minute cap. The key comes from the
+Limits: 8 credits a minute and 800 a day, one credit per symbol. Requests are
+spaced to stay under the per-minute cap, and each symbol fails on its own so
+one bad ticker can't take the rest down. The key comes from the
 TWELVEDATA_API_KEY environment variable (a GitHub secret in the cloud, .env
 locally) and is never logged or written to anything published.
 
@@ -26,9 +26,6 @@ import pandas as pd
 from ..http import FetchError, get
 
 URL = "https://api.twelvedata.com/time_series"
-SYMBOLS = {"EUR/USD": "EURUSD", "GBP/USD": "GBPUSD", "USD/JPY": "USDJPY",
-           "USD/CHF": "USDCHF", "USD/CAD": "USDCAD", "AUD/USD": "AUDUSD",
-           "NZD/USD": "NZDUSD", "XAU/USD": "XAUUSD"}
 SPACING_SECONDS = 8.0
 
 
@@ -45,21 +42,23 @@ def parse(raw: bytes, name: str, today: pd.Timestamp | None = None) -> pd.DataFr
     df.index.name = "date"
     df = df[["open", "high", "low", "close"]].astype(float).sort_index()
     df = df[~df.index.duplicated(keep="last")]
-    df = df[(df.index < today) & (df.index.dayofweek < 5)]
-    df.columns = pd.MultiIndex.from_product([[name], df.columns])
-    return df
+    return df[(df.index < today) & (df.index.dayofweek < 5)]
 
 
-def fetch(days: int = 800) -> pd.DataFrame:
-    """OHLC for every symbol, columns (instrument, field)."""
+def fetch(symbols: dict[str, str], days: int = 800
+          ) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
+    """{symbol: name} -> ({name: OHLC frame}, {name: error})."""
     key = os.environ.get("TWELVEDATA_API_KEY")
     if not key:
-        raise FetchError("TWELVEDATA_API_KEY is not set")
-    frames = []
-    for i, (symbol, name) in enumerate(SYMBOLS.items()):
+        return {}, {name: "TWELVEDATA_API_KEY is not set" for name in symbols.values()}
+    bars, errors = {}, {}
+    for i, (symbol, name) in enumerate(symbols.items()):
         if i:
             time.sleep(SPACING_SECONDS)
-        frames.append(parse(get(URL, retries=1, params={
-            "symbol": symbol, "interval": "1day", "outputsize": days,
-            "apikey": key}), name))
-    return pd.concat(frames, axis=1)
+        try:
+            bars[name] = parse(get(URL, retries=1, params={
+                "symbol": symbol, "interval": "1day", "outputsize": days,
+                "apikey": key}), name)
+        except Exception as e:  # noqa: BLE001 - one symbol never sinks the rest
+            errors[name] = str(e)
+    return bars, errors

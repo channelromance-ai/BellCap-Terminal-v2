@@ -7,70 +7,61 @@ ago. So each series is judged on its latest date against its max age, and a
 source that fails outright marks all of its series as failed rather than
 dropping them from the report.
 
-Writes data/health.json and, when running in GitHub Actions, a table to the
-job summary page so the result can be read without opening a log.
+The repo is public, so its run summaries and artifacts are too. Price rows
+report date and source but never a value: vendor prices are personal-use
+data and don't get published, even as one number in a health table.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from .catalog import GAPS, SOURCES
-from .sources import forexfactory
+from .catalog import GAPS, PRICES, SOURCES
+from .collect import Collected, collect
 
 
-def _last(frame: pd.DataFrame, col: str):
-    s = frame[col].dropna() if col in frame else pd.Series(dtype=float)
-    if isinstance(s, pd.DataFrame):          # OHLC frames: judge on the close
-        s = s["close"].dropna()
-    return (s.index[-1], float(s.iloc[-1]), len(s)) if len(s) else (None, None, 0)
+def _row(spec, series: pd.Series, source: str, failed: bool, today,
+         show_value: bool = True) -> dict:
+    s = series.dropna()
+    date = s.index[-1] if len(s) else None
+    age = (today - date).days if date is not None else None
+    status = ("fail" if failed and date is None else "missing" if date is None
+              else "stale" if age > spec.max_age else "ok")
+    return {"id": spec.id, "name": spec.name, "group": spec.group,
+            "source": source, "status": status, "points": len(s),
+            "last_date": date.date().isoformat() if date is not None else None,
+            "last_value": round(float(s.iloc[-1]), 4) if show_value and len(s) else None,
+            "age_days": age, "max_age": spec.max_age}
 
 
-def check(today: pd.Timestamp | None = None) -> dict:
+def check(data: Collected, today: pd.Timestamp | None = None) -> dict:
     today = (today or pd.Timestamp.now(tz="UTC")).tz_localize(None).normalize()
-    rows, sources = [], []
+    failed = {s["source"] for s in data.sources if not s["ok"]}
+    rows = []
     for module, specs in SOURCES.items():
         name = module.__name__.rsplit(".", 1)[-1]
-        t0 = time.time()
-        try:
-            frame, error = module.fetch(), None
-        except Exception as e:  # noqa: BLE001 - report every failure, don't stop
-            frame, error = pd.DataFrame(), f"{type(e).__name__}: {e}"
-        sources.append({"source": name, "ok": error is None, "error": error,
-                        "seconds": round(time.time() - t0, 1)})
         for spec in specs:
-            col = spec.id[3:] if spec.id.startswith("PX.") else spec.id
-            date, value, n = _last(frame, col)
-            age = (today - date).days if date is not None else None
-            status = ("fail" if error else "missing" if date is None
-                      else "stale" if age > spec.max_age else "ok")
-            rows.append({"id": spec.id, "name": spec.name, "group": spec.group,
-                         "source": name, "status": status, "points": n,
-                         "last_date": date.date().isoformat() if date is not None else None,
-                         "last_value": None if value is None else round(value, 4),
-                         "age_days": age, "max_age": spec.max_age})
-    calendar = _check_calendar()
+            col = data.macro.get(spec.id, pd.Series(dtype=float))
+            rows.append(_row(spec, col, name, name in failed, today))
+    for spec in PRICES:
+        bars = data.bars.get(spec.id)
+        close = bars["close"] if bars is not None else pd.Series(dtype=float)
+        rows.append(_row(spec, close, data.price_sources.get(spec.id, "-"),
+                         spec.id in data.price_errors, today, show_value=False))
+
+    cal = data.calendar
+    calendar = ({"ok": True, "events": len(cal),
+                 "high_impact": int((cal["impact"] == "High").sum())}
+                if cal is not None else {"ok": False, "error": data.calendar_error})
     counts = pd.Series([r["status"] for r in rows]).value_counts().to_dict()
     return {"checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "summary": counts, "sources": sources, "series": rows,
-            "calendar": calendar, "gaps": GAPS}
-
-
-def _check_calendar() -> dict:
-    try:
-        cal = forexfactory.fetch()
-        high = cal[cal["impact"] == "High"]
-        return {"ok": True, "events": len(cal), "high_impact": len(high),
-                "first": cal["time"].min().isoformat(),
-                "last": cal["time"].max().isoformat()}
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+            "summary": counts, "sources": data.sources, "series": rows,
+            "price_errors": data.price_errors, "calendar": calendar, "gaps": GAPS}
 
 
 def markdown(report: dict) -> str:
@@ -81,9 +72,10 @@ def markdown(report: dict) -> str:
              "", "| | Series | Source | Last date | Value | Age (days) |",
              "|---|---|---|---|---|---|"]
     for r in report["series"]:
+        value = r["last_value"] if r["last_value"] is not None else "-"
+        age = r["age_days"] if r["age_days"] is not None else "-"
         lines.append(f"| {icon[r['status']]} | {r['name']} | {r['source']} | "
-                     f"{r['last_date'] or '-'} | {r['last_value'] if r['last_value'] is not None else '-'} | "
-                     f"{r['age_days'] if r['age_days'] is not None else '-'} / {r['max_age']} |")
+                     f"{r['last_date'] or '-'} | {value} | {age} / {r['max_age']} |")
     failed = [s for s in report["sources"] if not s["ok"]]
     if failed:
         lines += ["", "### Failed sources", ""]
@@ -96,8 +88,8 @@ def markdown(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def run(out_dir: str = "data") -> dict:
-    report = check()
+def run(out_dir: str = "data", data: Collected | None = None) -> dict:
+    report = check(data or collect())
     Path(out_dir).mkdir(exist_ok=True)
     Path(out_dir, "health.json").write_text(json.dumps(report, indent=1))
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
