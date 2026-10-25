@@ -16,7 +16,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from . import backtest, charts, edge, forecast, fx, model, setups, store, surprises, thesis
+from . import (backtest, charts, correlations, edge, forecast, fx, model, setups, store,
+               surprises, thesis)
 from .collect import Collected
 from .config import MODEL_VERSION
 from .ts import rnd, upto
@@ -60,7 +61,8 @@ def run(data: Collected, health: dict, progress=None) -> dict:
         if a["name"] in closes:
             forecasts[a["name"]] = forecast.forecast("asset", a, closes[a["name"]], asof, calib)
 
-    snapshot["ideas"] = thesis.build_cards(snapshot, closes, asof, calib)
+    snapshot["correlations"] = correlations.build(closes, data.macro, fx.usd_value(data.bars), asof)
+    snapshot["ideas"] = thesis.build_cards(snapshot, closes, asof, calib, snapshot["correlations"])
     tickets, graded = setups.update(store.load_json(setups.PATH), snapshot["ideas"],
                                     data.bars, closes, asof)
     snapshot["setups"] = {"record": setups.summary(graded),

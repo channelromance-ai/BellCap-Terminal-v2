@@ -3,6 +3,7 @@ import { LineChart, PriceChart } from "../components/charts.jsx";
 import Thesis from "../components/Thesis.jsx";
 import GoldRvol from "../components/GoldRvol.jsx";
 import Headlines, { newsTags } from "../components/Headlines.jsx";
+import { MovesWith } from "./Correlations.jsx";
 import { Failed, Loading, Panel, Signed } from "../components/ui.jsx";
 
 function PushBar({ v }) {
@@ -67,6 +68,7 @@ export default function Market({ snap, id }) {
               {a.link_check && ` Gold's real-yield link: ${a.link_check.state} (corr ${fmt(a.link_check.corr)}).`}
             </div>
           </Panel>
+          <MovesWith snap={snap} id={id} num={7} />
           <Panel num={4} title="Driver score" aside="weekly history" bodyClass="">
             {chart && <LineChart height={160} digits={0}
               series={[{ key: "score", label: "driver score", colour: "#ffa028", data: chart.score }]}

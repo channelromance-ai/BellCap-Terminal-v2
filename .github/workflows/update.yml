@@ -48,6 +48,7 @@ jobs:
           python -m unittest discover tests
           python -m engine.surprises
           python -m engine.setups
+          python -m engine.correlations
 
       - name: Fetch, score and save
         env:

@@ -19,6 +19,7 @@ import pandas as pd
 
 from . import config as C
 from . import edge
+from .sources import prices
 from .ts import rnd, upto
 
 RISK_CCYS, HAVEN_CCYS = {"AUD", "NZD", "CAD"}, {"JPY", "CHF", "USD"}
@@ -161,7 +162,32 @@ def _card(name, kind, bias, lean, pro, con, notes, cal, close, asof, record) -> 
             "track_record": record}
 
 
-def build_cards(snapshot: dict, closes: dict, asof, calib: dict | None) -> list[dict]:
+def family(name: str) -> set[str]:
+    """Currencies for a pair, the group for a market; USDIDX is the dollar."""
+    if name in prices.BY_NAME and prices.BY_NAME[name].group != "fx":
+        return {prices.BY_NAME[name].group}
+    if name == "USDIDX":
+        return {"USD"}
+    return {name[:3], name[3:]} if len(name) == 6 else {name}
+
+
+def partner_note(name: str, corr: dict | None) -> str | None:
+    """The market this one moves with most, and what that partner's month
+    implies here if the usual relationship held, against what happened."""
+    top = (corr or {}).get("top", {}).get(name)
+    # Skip siblings (pairs sharing a currency, Brent for WTI, silver for gold):
+    # they say little. The useful partner is the strongest one from elsewhere.
+    p = next((x for x in (top or {}).get("partners", [])
+              if not family(name) & family(x["name"])), None)
+    if not p or abs(p["corr"]) < 0.5 or p["implied_1m"] is None or top["actual_1m"] is None:
+        return None
+    return (f"Moves with {p['name']} (60-day corr {p['corr']:+.2f}, {p['explained']:.0%} of moves): "
+            f"its {p['other_1m']:+.1f}{p['other_unit']} month implies {p['implied_1m']:+.2f}% here; "
+            f"actual {top['actual_1m']:+.2f}%")
+
+
+def build_cards(snapshot: dict, closes: dict, asof, calib: dict | None,
+                corr: dict | None = None) -> list[dict]:
     ccy = {c["ccy"]: c for c in snapshot["currencies"]}
     cards = [pair_card(p, ccy, snapshot["regime"], snapshot["calendar"],
                        closes.get(p["pair"]), asof, calib)
@@ -169,4 +195,8 @@ def build_cards(snapshot: dict, closes: dict, asof, calib: dict | None) -> list[
     cards += [asset_card(a, snapshot["regime"], snapshot["calendar"], closes.get(a["name"]),
                          asof, calib)
               for a in snapshot["assets"] if a["name"] in closes]
+    for card in cards:
+        note = partner_note(card["name"], corr)
+        if note:
+            card["notes"].insert(0, note)
     return cards

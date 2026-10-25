@@ -14,21 +14,23 @@ import Calendar from "./pages/Calendar.jsx";
 import Track from "./pages/Track.jsx";
 import Health from "./pages/Health.jsx";
 import News from "./pages/News.jsx";
+import Correlations from "./pages/Correlations.jsx";
 
 const MENU = [
   ["home", "Overview"], ["pairs", "Pairs"], ["currencies", "Currencies"], ["markets", "Markets"],
   ["rates", "Rates"], ["calendar", "Calendar"], ["track", "Track record"], ["health", "Data health"], ["news", "News"],
+  ["corr", "Correlations"],
 ];
 const TITLES = {
   home: "Macro Overview", pairs: "FX Pairs Monitor", pair: "Pair Analysis", currencies: "Currency Board",
   currency: "Currency Analysis", markets: "Markets Monitor", market: "Market Analysis",
   rates: "World Rates", calendar: "Economic Calendar", track: "Track Record", health: "Data Health",
-  news: "News",
+  news: "News", corr: "Cross-Market Correlations",
 };
 const PARENT = { pair: "pairs", currency: "currencies", market: "markets" };
 const PAGES = { home: Home, pairs: Pairs, pair: Pair, currencies: Currencies, currency: Currency,
                 markets: Markets, market: Market, rates: Rates, calendar: Calendar, track: Track,
-                health: Health, news: News };
+                health: Health, news: News, corr: Correlations };
 
 // Typed command -> route, Bloomberg style: "EURUSD <GO>".
 function resolve(text, snap) {
@@ -56,7 +58,7 @@ function CommandLine({ snap }) {
     const onKey = (e) => {
       if (e.target.tagName === "INPUT") return;
       if (e.key === "/") { e.preventDefault(); ref.current?.focus(); }
-      else if (/^[1-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) go(MENU[Number(e.key) - 1][0]);
+      else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) go(MENU[(Number(e.key) || 10) - 1][0]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -73,7 +75,7 @@ function CommandLine({ snap }) {
       <input ref={ref} value={text} onChange={(e) => setText(e.target.value)} placeholder="EURUSD, GOLD, USD…"
              aria-label="Go to a pair, currency, market or page" spellCheck={false} />
       <span className="go">&lt;GO&gt;</span>
-      {err ? <span className="err">{err}</span> : <span className="dim hint">type a ticker, or press / then 1–9</span>}
+      {err ? <span className="err">{err}</span> : <span className="dim hint">type a ticker, or press / then 0–9</span>}
       <span className="clock">READ AS OF {snap.asof} · {snap.regime?.state?.toUpperCase()}</span>
     </form>
   );

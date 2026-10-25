@@ -111,6 +111,17 @@ variables:
 To preview locally without a login (it reads `data/private`, which
 `python run.py update` writes): `cd web && npm install && npm run dev`.
 
+## Cross-market correlations
+
+Every run correlates the daily moves of all 28 pairs, the 10 markets, VIX,
+the US 10-year yield and the dollar index, over 60 sessions and over a year.
+For each market, the site lists its strongest partners: how much it
+typically moves per move in each partner, what share of its movement they
+share, and what the partner's last month implies for this market against
+what actually happened. Thesis cards cite the strongest partner outside the
+market's own family (siblings like Brent for WTI are skipped). This measures
+co-movement, not cause and effect. Page: **10) Correlations** (key 0).
+
 ## Gold RVOL
 
 Every hour of the gold session, **Gold RVOL** compares the hour that just

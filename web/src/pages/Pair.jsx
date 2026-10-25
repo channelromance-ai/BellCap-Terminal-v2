@@ -3,6 +3,7 @@ import { href } from "../router.js";
 import { LineChart, PriceChart } from "../components/charts.jsx";
 import Thesis from "../components/Thesis.jsx";
 import Headlines, { newsTags } from "../components/Headlines.jsx";
+import { MovesWith } from "./Correlations.jsx";
 import { Failed, Loading, Panel, Signed } from "../components/ui.jsx";
 
 export default function Pair({ snap, id }) {
@@ -43,6 +44,7 @@ export default function Pair({ snap, id }) {
                 reference={{ y: 0, label: "" }} />}
             </Panel>
           </div>
+          <MovesWith snap={snap} id={id} num={7} />
           <Panel num={5} title="Read">
             <div className="kv">
               <span className="k">Rate gap</span><span className="v">{p.spread_bp != null ? `${fmt(p.spread_bp, 0)} bp` : p.spread_quality === "mixed tenor" ? "mixed maturities" : "-"}</span>
