@@ -33,7 +33,8 @@ export default function Market({ snap, id }) {
         <Signed v={m.chg_1d_pct} unit="% 1D" />
         <Signed v={a.return_1m_pct} unit="% 1M" />
         <Signed v={a.return_3m_pct} unit="% 3M" />
-        <span className="what">source: {snap.price_sources[id] ?? "-"}</span>
+        <span className={snap.price_sources[id]?.includes("ETF") ? "warn" : "what"}>
+          {snap.price_sources[id]?.includes("ETF") ? "⚠ " : ""}source: {snap.price_sources[id] ?? "-"}</span>
       </div>
       <div className="grid cols-2">
         <div className="grid">

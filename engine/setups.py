@@ -41,6 +41,11 @@ def grade(t: dict, px: pd.DataFrame | None, asof) -> dict:
     """Status and results of one ticket as of `asof`."""
     out = {**t, "status": "pending", "filled": None, "results": [None] * len(t["targets"]),
            "exits": [None] * len(t["targets"])}
+    # Market tickets logged before 2026-10-27 were priced from ETF stand-ins
+    # (WTI from USO at ~166). Graded against real levels they'd be nonsense,
+    # so they're voided, not edited: the log stays as it was written.
+    if t.get("kind") == "asset" and "price_source" not in t:
+        return {**out, "status": "void"}
     if px is None:
         return out
     side = 1 if t["side"] == "long" else -1
@@ -71,7 +76,7 @@ def grade(t: dict, px: pd.DataFrame | None, asof) -> dict:
 
 
 def update(tickets: list[dict] | None, cards: list[dict], bars: dict, closes: dict,
-           asof) -> tuple[list[dict], list[dict]]:
+           asof, sources: dict | None = None) -> tuple[list[dict], list[dict]]:
     """Add tickets for new setups, then grade everything.
     Returns (stored tickets, graded tickets)."""
     tickets = list(tickets or [])
@@ -86,7 +91,8 @@ def update(tickets: list[dict] | None, cards: list[dict], bars: dict, closes: di
             tickets.append({"name": c["name"], "kind": c["kind"], "side": s["side"], "issued": day,
                             "entry": s["entry"], "stop": s["stop"], "targets": s["targets"],
                             "targets_r": s["targets_r"],
-                            "basis": price_bars(c["name"], bars, closes)[1]})
+                            "basis": price_bars(c["name"], bars, closes)[1],
+                            "price_source": (sources or {}).get(c["name"], "fx crosses")})
     graded = [grade(t, price_bars(t["name"], bars, closes)[0], asof) for t in tickets]
     return tickets, graded
 
@@ -94,6 +100,7 @@ def update(tickets: list[dict] | None, cards: list[dict], bars: dict, closes: di
 def summary(graded: list[dict]) -> dict:
     """Record per target: how often it was reached before the stop, and the average R."""
     filled = [g for g in graded if g["filled"]]
+    graded = [g for g in graded if g["status"] != "void"]
     out = {"tickets": len(graded), "pending": sum(g["status"] == "pending" for g in graded),
            "expired": sum(g["status"] == "expired" for g in graded),
            "open": sum(g["status"] == "open" for g in graded), "filled": len(filled), "targets": []}

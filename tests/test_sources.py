@@ -138,20 +138,21 @@ class Markets(unittest.TestCase):
         self.assertEqual(len(out), 2)                       # no guessed FX day
         self.assertAlmostEqual(out["close"].iloc[-1], 40.0)
 
-    def test_backup_replaces_whole_history_and_is_labelled(self):
+    def test_real_levels_first_etf_only_as_labelled_fallback(self):
         idx = pd.to_datetime(["2026-10-22", "2026-10-23"])
-        bar = pd.DataFrame({f: [1.0, 1.0] for f in ("open", "high", "low", "close")},
-                           index=idx)
-        td = ({i.name: bar for i in prices.INSTRUMENTS if i.name != "NAS100"},
-              {"NAS100": "Twelve Data NAS100: plan limit"})
-        yh = ({"NAS100": bar * 20000}, {})
-        with mock.patch.object(prices.twelvedata, "fetch", return_value=td), \
-             mock.patch.object(prices.yahoo, "fetch", return_value=yh) as backup:
+        bar = lambda v: pd.DataFrame({f: [v, v] for f in ("open", "high", "low", "close")}, index=idx)
+        fx_names = [i.name for i in prices.INSTRUMENTS if i.order == prices.FX_ORDER]
+        td = lambda symbols: ({n: bar(1.0) if n in fx_names else bar(166.0) for n in symbols.values()}, {})
+        yahoo_answers = {"CL=F": "WTI"}          # Yahoo only has oil; silver/DAX/FTSE fall back
+        yh = lambda tickers: ({n: bar(99.6) for t, n in tickers.items() if t in yahoo_answers}, {})
+        with mock.patch.object(prices.twelvedata, "fetch", side_effect=td),              mock.patch.object(prices.yahoo, "fetch", side_effect=yh),              mock.patch.object(prices.fred, "series", return_value=pd.Series([7600.0, 7676.8], index=idx)):
             bars, sources, errors = prices.fetch()
-        backup.assert_called_once_with({"^NDX": "NAS100"})
-        self.assertEqual(sources["NAS100"], "yahoo (^NDX)")
-        self.assertEqual(bars["NAS100"]["close"].iloc[-1], 20000)
-        self.assertEqual(sources["US500"], "twelvedata (SPY ETF)")
+        self.assertEqual(bars["WTI"]["close"].iloc[-1], 99.6)            # the market, not USO
+        self.assertEqual(sources["WTI"], "yahoo (CL=F)")
+        self.assertEqual(sources["US500"], "fred (SP500)")
+        self.assertEqual(bars["US500"]["close"].iloc[-1], 7676.8)
+        self.assertIn("ETF price, not the market level", sources["XAGUSD"])
+        self.assertEqual(sources["EURUSD"], "twelvedata")
         self.assertEqual(errors, {})
 
     def test_calendar(self):

@@ -49,10 +49,12 @@ jobs:
           python -m engine.surprises
           python -m engine.setups
           python -m engine.correlations
+          python -m engine.positioning
 
       - name: Fetch, score and save
         env:
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           BELLCAP_PRIVATE_DIR: private
         run: python run.py update
 

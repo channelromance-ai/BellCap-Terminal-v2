@@ -15,22 +15,23 @@ import Track from "./pages/Track.jsx";
 import Health from "./pages/Health.jsx";
 import News from "./pages/News.jsx";
 import Correlations from "./pages/Correlations.jsx";
+import Positioning from "./pages/Positioning.jsx";
 
 const MENU = [
   ["home", "Overview"], ["pairs", "Pairs"], ["currencies", "Currencies"], ["markets", "Markets"],
   ["rates", "Rates"], ["calendar", "Calendar"], ["track", "Track record"], ["health", "Data health"], ["news", "News"],
-  ["corr", "Correlations"],
+  ["corr", "Correlations"], ["cot", "Positioning"],
 ];
 const TITLES = {
   home: "Macro Overview", pairs: "FX Pairs Monitor", pair: "Pair Analysis", currencies: "Currency Board",
   currency: "Currency Analysis", markets: "Markets Monitor", market: "Market Analysis",
   rates: "World Rates", calendar: "Economic Calendar", track: "Track Record", health: "Data Health",
-  news: "News", corr: "Cross-Market Correlations",
+  news: "News", corr: "Cross-Market Correlations", cot: "Speculative Positioning",
 };
 const PARENT = { pair: "pairs", currency: "currencies", market: "markets" };
 const PAGES = { home: Home, pairs: Pairs, pair: Pair, currencies: Currencies, currency: Currency,
                 markets: Markets, market: Market, rates: Rates, calendar: Calendar, track: Track,
-                health: Health, news: News, corr: Correlations };
+                health: Health, news: News, corr: Correlations, cot: Positioning };
 
 // Typed command -> route, Bloomberg style: "EURUSD <GO>".
 function resolve(text, snap) {
@@ -170,7 +171,7 @@ export default function App() {
         <span>Read as of {snap.asof} ({daysAgo(snap.asof)}d ago)</span>
         <span>Built {snap.generated_at.slice(0, 16).replace("T", " ")} UTC</span>
         <span className={snap.data_warnings?.length ? "warn" : ""}>{health}</span>
-        <span>Prices: Twelve Data (ETF stand-ins for silver, oil, indices) · not for redistribution</span>
+        <span>Prices: Twelve Data, FRED, Yahoo · daily closes · not for redistribution</span>
         <a href="#" onClick={async (e) => { e.preventDefault(); await logout(); load(); }}>Log off</a>
       </div>
     </div>

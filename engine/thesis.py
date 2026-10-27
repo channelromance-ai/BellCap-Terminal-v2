@@ -19,8 +19,8 @@ import pandas as pd
 
 from . import config as C
 from . import edge
-from .sources import prices
-from .ts import rnd, upto
+from .correlations import family
+from .ts import ordinal, rnd, upto
 
 RISK_CCYS, HAVEN_CCYS = {"AUD", "NZD", "CAD"}, {"JPY", "CHF", "USD"}
 ASSET_CCYS = {"XAUUSD": ["USD"], "XAGUSD": ["USD"], "NAS100": ["USD"], "US500": ["USD"],
@@ -101,7 +101,7 @@ def pair_card(p: dict, ccy: dict, regime: dict, calendar: list, close, asof, cal
             if leg.get("cot_flag"):
                 crowded = 1 if "long" in leg["cot_flag"] else -1
                 (con if crowded == direction else pro).append(
-                    f"{leg['ccy']} speculators {leg['cot_flag']} ({leg['cot_pct']:.0f}th pct)")
+                    f"{leg['ccy']} speculators {leg['cot_flag']} ({ordinal(max(leg['cot_pct'], 1))} percentile of 3 years)")
         if regime.get("state") in ("stressed", "stress rising"):
             long_ccy, short_ccy = (b["ccy"], q["ccy"]) if lean > 0 else (q["ccy"], b["ccy"])
             if long_ccy in RISK_CCYS and short_ccy in HAVEN_CCYS:
@@ -141,7 +141,7 @@ def asset_card(a: dict, regime: dict, calendar: list, close, asof, calib) -> dic
     if a["cot_flag"] and lean:
         crowded = 1 if "long" in a["cot_flag"] else -1
         (con if crowded == lean else pro).append(
-            f"Speculators {a['cot_flag']} ({a['cot_pct']:.0f}th pct)")
+            f"Speculators {a['cot_flag']} ({ordinal(max(a['cot_pct'], 1))} percentile of 3 years)")
     if a.get("link_check") and a["link_check"]["state"] != "ok":
         notes.append(f"Gold's real-yield link is {a['link_check']['state']} "
                      f"(corr {a['link_check']['corr']})")
@@ -162,15 +162,6 @@ def _card(name, kind, bias, lean, pro, con, notes, cal, close, asof, record) -> 
             "track_record": record}
 
 
-def family(name: str) -> set[str]:
-    """Currencies for a pair, the group for a market; USDIDX is the dollar."""
-    if name in prices.BY_NAME and prices.BY_NAME[name].group != "fx":
-        return {prices.BY_NAME[name].group}
-    if name == "USDIDX":
-        return {"USD"}
-    return {name[:3], name[3:]} if len(name) == 6 else {name}
-
-
 def partner_note(name: str, corr: dict | None) -> str | None:
     """The market this one moves with most, and what that partner's month
     implies here if the usual relationship held, against what happened."""
@@ -181,7 +172,7 @@ def partner_note(name: str, corr: dict | None) -> str | None:
               if not family(name) & family(x["name"])), None)
     if not p or abs(p["corr"]) < 0.5 or p["implied_1m"] is None or top["actual_1m"] is None:
         return None
-    return (f"Moves with {p['name']} (60-day corr {p['corr']:+.2f}, {p['explained']:.0%} of moves): "
+    return (f"Moving with {p['name']} this month (corr {p['corr']:+.2f}, {p['explained']:.0%} of moves): "
             f"its {p['other_1m']:+.1f}{p['other_unit']} month implies {p['implied_1m']:+.2f}% here; "
             f"actual {top['actual_1m']:+.2f}%")
 

@@ -61,6 +61,12 @@ export function signed(x, digits = 2, unit = "") {
   return `${x > 0 ? "+" : ""}${x.toFixed(digits)}${unit}`;
 }
 
+export function ordinal(x) {
+  const n = Math.max(1, Math.round(x));
+  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : { 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th";
+  return `${n}${s}`;
+}
+
 export const tone = (x) => (!isNum(x) || x === 0 ? "" : x > 0 ? "pos" : "neg");
 
 export function priceDigits(x) {

@@ -1,4 +1,4 @@
-import { fmt } from "../data.js";
+import { fmt, ordinal } from "../data.js";
 import { go } from "../router.js";
 import { Panel, ScoreBar, Signed } from "../components/ui.jsx";
 
@@ -33,7 +33,7 @@ export default function Currencies({ snap }) {
               <td><Signed v={c.cpi_gap} d={1} /></td>
               <td><Signed v={c.real_policy} d={1} /></td>
               <td><Signed v={c.strength_1m_pct} unit="%" /></td>
-              <td className="l">{c.cot_flag ? <span className="tag hot">{c.cot_flag}</span> : <span className="dim">{c.cot_pct != null ? `${fmt(c.cot_pct, 0)}th pct` : "-"}</span>}</td>
+              <td className="l">{c.cot_flag ? <span className="tag hot">{c.cot_flag}</span> : <span className="dim">{c.cot_pct != null ? `${ordinal(c.cot_pct)} pct` : "-"}</span>}</td>
             </tr>
           ))}
         </tbody>

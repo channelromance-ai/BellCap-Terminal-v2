@@ -83,6 +83,13 @@ def efficiency_ratio(close: pd.Series, sessions: int) -> float | None:
     return float(abs(c.iloc[-1] - c.iloc[0]) / path) if path else None
 
 
+def ordinal(n: float) -> str:
+    """1 -> '1st', 82 -> '82nd', 93 -> '93rd', 11 -> '11th'."""
+    n = int(round(n))
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def clip(x: float | None, lo: float = -2.0, hi: float = 2.0) -> float | None:
     return None if x is None else float(min(hi, max(lo, x)))
 

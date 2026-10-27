@@ -7,7 +7,7 @@ eventually say which of them earned their place. Change a number, bump
 MODEL_VERSION, and the log keeps the old and new reads apart.
 """
 
-MODEL_VERSION = "2.0-macro.3"
+MODEL_VERSION = "2.0-macro.4"   # .4: real market levels, not ETF prices
 
 CCYS = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"]
 
