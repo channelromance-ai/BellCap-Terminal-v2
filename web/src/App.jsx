@@ -169,6 +169,12 @@ export default function App() {
           </a>
         ))}
       </nav>
+      {asia && !snap.asia?.markets && (
+        <div className="band" style={{ background: "#5a3a00", margin: "4px 8px 0" }}>
+          ASIA filter is on, but this read was built before Asia data existed, so every market is filtered out.
+          It fills in on the next Update run (or run Actions → Update now). Turn 98) ASIA off to see everything meanwhile.
+        </div>
+      )}
       <main><Page snap={snap} id={route.id} asia={asia} /></main>
       <Band snap={snap} />
       <div className="status">

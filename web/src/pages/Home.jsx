@@ -30,6 +30,11 @@ function MainSignals({ snap, asia }) {
           <th className="l">3M</th><th>Last</th><th>1M likely range (68%)</th><th className="l">Next catalyst</th>
         </tr></thead>
         <tbody>
+          {!rows.length && (
+            <tr><td className="l dim" colSpan={8}>
+              {asia ? "No market that's active in Asia hours has a macro lean today." : "No macro leans today."}
+            </td></tr>
+          )}
           {rows.map((r) => {
             const next = r.card.catalysts.find((e) => e.impact === "High") || r.card.catalysts[0];
             return (
