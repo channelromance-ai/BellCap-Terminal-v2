@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, isNum } from "../data.js";
+import { asiaActive, fmt, isNum } from "../data.js";
 import { go } from "../router.js";
 import { Lean, Panel, RangeBar, Signed, Spark } from "../components/ui.jsx";
 
@@ -20,13 +20,17 @@ const COLS = [
   ["eff", "Eff", (r) => r.efficiency, (r) => fmt(r.efficiency)],
   ["range", "1Y range", (r) => (isNum(r.m.lo_1y) ? (r.m.last - r.m.lo_1y) / (r.m.hi_1y - r.m.lo_1y) : null),
    (r) => <RangeBar lo={r.m.lo_1y} hi={r.m.hi_1y} avg={r.m.avg_1y} now={r.m.last} />],
+  ["asia", "Asia share", (r) => r.a?.share, (r) => (isNum(r.a?.share)
+    ? <span className={r.a.active ? "amber" : "dim"}>{Math.round(r.a.share * 100)}%</span> : "-")],
+  ["asiar", "Asia range", (r) => r.a?.avg_range_pct, (r) => (isNum(r.a?.avg_range_pct) ? `${r.a.avg_range_pct.toFixed(2)}%` : "-")],
   ["spark", "3M", null, (r) => <Spark values={r.m.spark} />, "l"],
 ];
 
-export default function Pairs({ snap }) {
+export default function Pairs({ snap, asia }) {
   const [sort, setSort] = useState({ key: "score", dir: -1, abs: true });
   const cards = Object.fromEntries(snap.ideas.map((c) => [c.name, c]));
-  const rows = snap.pairs.map((p) => ({ ...p, m: snap.markets[p.pair] || {}, card: cards[p.pair] }));
+  const rows = snap.pairs.filter((p) => !asia || asiaActive(snap, p.pair))
+    .map((p) => ({ ...p, m: snap.markets[p.pair] || {}, card: cards[p.pair], a: snap.asia?.markets?.[p.pair] }));
   const col = COLS.find((c) => c[0] === sort.key);
   const val = (r) => {
     const v = col[2](r);

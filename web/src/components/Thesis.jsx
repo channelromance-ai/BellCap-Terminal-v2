@@ -1,5 +1,5 @@
 // The thesis card: lean, for / against / notes, catalysts, setup template, track record.
-import { fmt, fmtTime, isNum } from "../data.js";
+import { asiaWindowLocal, fmt, fmtTime, isNum } from "../data.js";
 import { href } from "../router.js";
 import { ImpactTag, Lean, Panel } from "./ui.jsx";
 
@@ -19,6 +19,39 @@ function TrackLine({ record }) {
         </div>
       ))}
     </div>
+  );
+}
+
+// How this market behaves in the user's hours, and what lands inside them.
+function AsiaSection({ a }) {
+  if (!a) return null;
+  return (
+    <>
+      <div className="subhead">Asia session ({asiaWindowLocal()} your time)</div>
+      {isNum(a.share) ? (
+        <div className="kv">
+          <span className="k">Activity</span>
+          <span className={`v ${a.active ? "pos" : "warn"}`}>
+            {a.active ? "active" : "quiet"}: {Math.round(a.share * 100)}% of the day's range happens in Asia</span>
+          <span className="k">Typical Asia range</span><span className="v">{a.avg_range} ({fmt(a.avg_range_pct, 2)}%)</span>
+          <span className="k">Last session ({a.last_date})</span>
+          <span className="v">range {a.last_range} = {isNum(a.last_vs_avg) ? `${Math.round(a.last_vs_avg * 100)}%` : "-"} of normal,
+            moved {a.last_move_pct > 0 ? "+" : ""}{fmt(a.last_move_pct, 2)}%</span>
+        </div>
+      ) : a.note ? <div className="dim">{a.note}.</div> : null}
+      {a.events?.length > 0 && (
+        <table className="t" style={{ marginTop: 4 }}><tbody>
+          {a.events.map((e, i) => (
+            <tr key={i}><td className="l dim">{fmtTime(e.time)}</td><td className="l amber">{e.currency}</td>
+              <td className="l">{e.title}</td><td className="l"><span className={`tag ${e.impact === "High" ? "bad" : "hot"}`}>{e.impact}</span></td></tr>
+          ))}
+        </tbody></table>
+      )}
+      {!a.active && isNum(a.share) && (
+        <div className="note" style={{ padding: "4px 0 0" }}>Most of this market's movement comes outside your hours:
+          entries may sit unfilled, and the bigger moves happen while you're away.</div>
+      )}
+    </>
   );
 }
 
@@ -64,6 +97,8 @@ export default function Thesis({ card, ticket, num = 2 }) {
           ))}
         </tbody></table>
       ) : <div className="dim">Nothing scheduled.</div>}
+
+      <AsiaSection a={card.asia} />
 
       {s && (
         <>

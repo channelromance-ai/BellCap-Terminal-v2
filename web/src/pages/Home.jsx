@@ -1,4 +1,4 @@
-import { ASSET_LABEL, fmt, fmtTime, isNum } from "../data.js";
+import { ASSET_LABEL, asiaActive, fmt, fmtTime, inAsia, isNum } from "../data.js";
 import { go, href } from "../router.js";
 import { Lean, Panel, ScoreBar, Signed, Spark } from "../components/ui.jsx";
 import GoldRvol from "../components/GoldRvol.jsx";
@@ -18,8 +18,8 @@ export function leans(snap) {
     .sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
 }
 
-function MainSignals({ snap }) {
-  const rows = leans(snap).slice(0, 14);
+function MainSignals({ snap, asia }) {
+  const rows = leans(snap).filter((r) => !asia || asiaActive(snap, r.name)).slice(0, 14);
   const record = snap.track_record?.horizons?.["1m"]?.pair_score;
   return (
     <Panel num={1} title="Macro leans" className="span-2"
@@ -124,8 +124,8 @@ function MarketsPanel({ snap }) {
   );
 }
 
-function WeekAhead({ snap }) {
-  const rows = snap.calendar.filter((e) => !e.past && e.impact === "High").slice(0, 12);
+function WeekAhead({ snap, asia }) {
+  const rows = snap.calendar.filter((e) => !e.past && e.impact === "High" && (!asia || inAsia(e.time))).slice(0, 12);
   return (
     <Panel num={5} title="Week ahead" aside="high impact" bodyClass="scroll">
       {rows.length ? (
@@ -156,10 +156,10 @@ function DataPanel({ snap }) {
   );
 }
 
-export default function Home({ snap }) {
+export default function Home({ snap, asia }) {
   return (
     <div className="grid cols-3">
-      <MainSignals snap={snap} />
+      <MainSignals snap={snap} asia={asia} />
       <div className="grid">
         <Regime r={snap.regime} />
         <GoldRvol num={7} />
@@ -168,7 +168,7 @@ export default function Home({ snap }) {
       <Headlines num={8} className="span-all" limit={14} />
       <CurrencyBoard snap={snap} />
       <MarketsPanel snap={snap} />
-      <WeekAhead snap={snap} />
+      <WeekAhead snap={snap} asia={asia} />
     </div>
   );
 }

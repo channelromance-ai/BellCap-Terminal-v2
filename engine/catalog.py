@@ -58,7 +58,10 @@ SOURCES = {
                      EUR_SERVICESCPI="Euro area services HICP y/y"),
     mof: _specs("rates", 5, JPY_2Y="Japan 2-year", JPY_10Y="Japan 10-year"),
     boc: _specs("rates", 5, CAD_2Y="Canada 2-year", CAD_10Y="Canada 10-year"),
-    bis: [Spec(f"{c}.POLICY", f"{c} policy rate", "policy", 12) for c in CCYS],
+    # The BIS refreshes each country every week or two, and a policy rate only
+    # changes at a meeting, so age alone allows 21 days. doctor.py separately
+    # flags a rate whose central bank has decided since the BIS last updated it.
+    bis: [Spec(f"{c}.POLICY", f"{c} policy rate", "policy", 21) for c in CCYS],
     # Lags follow the NATIONAL release, which is when the market learned the
     # number; the OECD reposts it later, but in a live run a value that isn't
     # posted yet simply isn't there, so only the backtest needs this rule.

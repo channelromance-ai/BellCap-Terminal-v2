@@ -50,6 +50,7 @@ jobs:
           python -m engine.setups
           python -m engine.correlations
           python -m engine.positioning
+          python -m engine.asia
 
       - name: Fetch, score and save
         env:

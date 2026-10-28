@@ -20,7 +20,7 @@ export default function Health() {
               return (
                 <tr key={r.id}>
                   <td className={`l ${cls}`}>{icon}</td>
-                  <td className="l">{r.name}</td><td className="l dim">{r.source}</td>
+                  <td className="l">{r.name}{r.note && <div className="warn">{r.note}</div>}</td><td className="l dim">{r.source}</td>
                   <td>{r.last_date ?? "-"}</td><td className={cls}>{r.age_days ?? "-"}d</td>
                   <td className="dim">{r.max_age}d</td><td className="dim">{r.points}</td>
                 </tr>

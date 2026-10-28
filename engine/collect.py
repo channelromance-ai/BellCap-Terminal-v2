@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from .catalog import SOURCES
-from .sources import forexfactory, prices
+from .sources import forexfactory, prices, twelvedata
 
 
 @dataclass
@@ -27,6 +27,7 @@ class Collected:
     sources: list[dict] = field(default_factory=list)
     calendar: pd.DataFrame | None = None
     calendar_error: str | None = None
+    hourly: dict[str, pd.DataFrame] = field(default_factory=dict)   # FX + gold, UTC, for the Asia profile
 
 
 def _timed(fn):
@@ -55,6 +56,13 @@ def collect() -> Collected:
                    "error": "; ".join(f"{k}: {v}" for k, v in price_errors.items()) or None,
                    "seconds": secs})
 
+    fx_and_gold = {i.td: i.name for i in prices.INSTRUMENTS if i.order == prices.FX_ORDER}
+    result, error, secs = _timed(lambda: twelvedata.fetch_hourly(fx_and_gold))
+    hourly, hourly_errors = result or ({}, {})
+    status.append({"source": "hourly", "ok": not (error or hourly_errors),
+                   "error": error or "; ".join(f"{k}: {v}" for k, v in hourly_errors.items()) or None,
+                   "seconds": secs})
+
     calendar, cal_error, _ = _timed(forexfactory.fetch)
     return Collected(macro, bars, price_sources, price_errors, status,
-                     calendar, cal_error)
+                     calendar, cal_error, hourly)

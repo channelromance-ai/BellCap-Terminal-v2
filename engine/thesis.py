@@ -177,6 +177,19 @@ def partner_note(name: str, corr: dict | None) -> str | None:
             f"actual {top['actual_1m']:+.2f}%")
 
 
+def asia_block(card: dict, snapshot: dict) -> dict | None:
+    """The card's Asia-session view: how this market behaves in the user's
+    hours, and which of its catalysts fall inside them."""
+    a = snapshot.get("asia") or {}
+    prof = a.get("markets", {}).get(card["name"])
+    ccys = ({card["name"][:3], card["name"][3:]} if card["kind"] == "pair"
+            else set(ASSET_CCYS.get(card["name"], [])))
+    events = [e for e in a.get("events", []) if not e["past"] and e["currency"] in ccys]
+    if not prof and not events:
+        return None
+    return {**(prof or {}), "events": events[:6]}
+
+
 def build_cards(snapshot: dict, closes: dict, asof, calib: dict | None,
                 corr: dict | None = None) -> list[dict]:
     ccy = {c["ccy"]: c for c in snapshot["currencies"]}
@@ -187,6 +200,7 @@ def build_cards(snapshot: dict, closes: dict, asof, calib: dict | None,
                          asof, calib)
               for a in snapshot["assets"] if a["name"] in closes]
     for card in cards:
+        card["asia"] = asia_block(card, snapshot)
         note = partner_note(card["name"], corr)
         if note:
             card["notes"].insert(0, note)

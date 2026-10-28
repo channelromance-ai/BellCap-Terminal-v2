@@ -107,3 +107,17 @@ class Thesis(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PolicyDecisions(unittest.TestCase):
+    def test_decision_after_bis_update_marks_rate_stale(self):
+        from engine.doctor import decisions_since
+        rows = [{"id": "NZD.POLICY", "group": "policy", "status": "ok", "last_date": "2026-10-16", "last_value": 2.75},
+                {"id": "AUD.POLICY", "group": "policy", "status": "ok", "last_date": "2026-10-15", "last_value": 4.6}]
+        cal = pd.DataFrame({"time": pd.to_datetime(["2026-10-28T01:00:00Z", "2026-11-04T03:30:00Z"]),
+                            "currency": ["NZD", "AUD"], "impact": ["High", "High"],
+                            "title": ["Official Cash Rate", "Cash Rate"]})
+        decisions_since(rows, cal, pd.Timestamp("2026-10-28T12:00:00Z"))
+        self.assertEqual(rows[0]["status"], "stale")             # RBNZ decided after BIS's 16 Oct update
+        self.assertIn("Official Cash Rate decided 2026-10-28", rows[0]["note"])
+        self.assertEqual(rows[1]["status"], "ok")                # RBA's meeting hasn't happened yet

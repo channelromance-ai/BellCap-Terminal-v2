@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { ImpactTag, Panel, Toggle } from "../components/ui.jsx";
+import { inAsia } from "../data.js";
 
 const day = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 const time = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-export default function Calendar({ snap }) {
+export default function Calendar({ snap, asia }) {
   const [which, setWhich] = useState("upcoming");
   const [impact, setImpact] = useState("all");
-  const rows = snap.calendar.filter((e) => (which === "all" || !e.past) && (impact === "all" || e.impact === "High"));
+  const rows = snap.calendar.filter((e) => (which === "all" || !e.past) && (impact === "all" || e.impact === "High")
+    && (!asia || inAsia(e.time)));
   const days = [];
   for (const e of rows) {
     const d = day(e.time);

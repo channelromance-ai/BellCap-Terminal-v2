@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from . import (backtest, charts, correlations, edge, forecast, fx, model, positioning, setups,
-               store, surprises, thesis)
+from . import (asia, backtest, charts, correlations, edge, forecast, fx, model, positioning,
+               setups, store, surprises, thesis)
 from .collect import Collected
 from .config import MODEL_VERSION
 from .ts import rnd, upto
@@ -62,6 +62,7 @@ def run(data: Collected, health: dict, progress=None) -> dict:
             forecasts[a["name"]] = forecast.forecast("asset", a, closes[a["name"]], asof, calib)
 
     snapshot["positioning"] = positioning.read(data.macro, asof)
+    snapshot["asia"] = asia.read(getattr(data, "hourly", {}), snapshot["calendar"])
     snapshot["correlations"] = correlations.build(closes, data.macro, fx.usd_value(data.bars), asof)
     snapshot["ideas"] = thesis.build_cards(snapshot, closes, asof, calib, snapshot["correlations"])
     tickets, graded = setups.update(store.load_json(setups.PATH), snapshot["ideas"],

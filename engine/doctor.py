@@ -15,6 +15,7 @@ data and don't get published, even as one number in a health table.
 from __future__ import annotations
 
 import json
+import re
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +40,29 @@ def _row(spec, series: pd.Series, source: str, failed: bool, today,
             "age_days": age, "max_age": spec.max_age}
 
 
+# Forex Factory's titles for each bank's rate decision.
+DECISION = re.compile(r"(?:Cash Rate|Funds Rate|Overnight Rate|Bank Rate|Policy Rate|Main Refinancing Rate)$")
+
+
+def decisions_since(rows: list[dict], calendar: pd.DataFrame | None, now: pd.Timestamp) -> None:
+    """Mark a policy rate stale when its central bank has decided since the
+    BIS last updated it: the number on screen may be the old rate."""
+    if calendar is None or calendar.empty:
+        return
+    done = calendar[(calendar["time"] < now) & calendar["title"].str.contains(DECISION)]
+    for r in rows:
+        if r["group"] != "policy" or not r["last_date"]:
+            continue
+        ccy = r["id"].split(".")[0]
+        after = done[(done["currency"] == ccy) &
+                     (done["time"].dt.tz_convert(None).dt.normalize() > pd.Timestamp(r["last_date"]))]
+        if len(after):
+            e = after.iloc[-1]
+            r["status"] = "stale"
+            r["note"] = (f"{e['title']} decided {e['time'].date()}; BIS still shows "
+                         f"{r['last_value']}% from {r['last_date']}")
+
+
 def check(data: Collected, today: pd.Timestamp | None = None) -> dict:
     today = (today or pd.Timestamp.now(tz="UTC")).tz_localize(None).normalize()
     failed = {s["source"] for s in data.sources if not s["ok"]}
@@ -58,6 +82,7 @@ def check(data: Collected, today: pd.Timestamp | None = None) -> dict:
     calendar = ({"ok": True, "events": len(cal),
                  "high_impact": int((cal["impact"] == "High").sum())}
                 if cal is not None else {"ok": False, "error": data.calendar_error})
+    decisions_since(rows, data.calendar, pd.Timestamp.now(tz="UTC"))
     counts = pd.Series([r["status"] for r in rows]).value_counts().to_dict()
     return {"checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "summary": counts, "sources": data.sources, "series": rows,

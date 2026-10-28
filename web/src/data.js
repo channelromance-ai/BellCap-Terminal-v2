@@ -67,6 +67,23 @@ export function ordinal(x) {
   return `${n}${s}`;
 }
 
+// ---- Asia session (23:00-08:00 UTC), the hours the user trades ------------
+export const asiaActive = (snap, name) => Boolean(snap.asia?.markets?.[name]?.active);
+export function inAsia(iso) {
+  const h = new Date(iso).getUTCHours();
+  return h >= 23 || h < 8;
+}
+export function asiaWindowLocal() {
+  const t = (h) => { const d = new Date(); d.setUTCHours(h, 0, 0, 0);
+    return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); };
+  return `${t(23)} – ${t(8)}`;
+}
+export function useAsiaSwitch() {
+  const [on, setOn] = useState(() => { try { return localStorage.getItem("bc_asia") === "1"; } catch { return false; } });
+  const toggle = () => setOn((v) => { try { localStorage.setItem("bc_asia", v ? "0" : "1"); } catch { /* private mode */ } return !v; });
+  return [on, toggle];
+}
+
 export const tone = (x) => (!isNum(x) || x === 0 ? "" : x > 0 ? "pos" : "neg");
 
 export function priceDigits(x) {

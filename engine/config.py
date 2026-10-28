@@ -84,3 +84,8 @@ SETUP_TARGETS_R = (1.5, 3.0)
 # Hourly gold RVOL (GLD, US session). Same rule as v1.
 RVOL_THRESHOLD = 1.5        # flag an hour at >= 1.5x its usual volume
 RVOL_BASELINE_DAYS = 15     # same hour, previous 15 trading days
+
+# Asia session (the hours the user trades): a market counts as active when
+# its Asia range averages at least this share of its whole day's range.
+# Asia is 9 of 24 hours (37.5%); NZD/AUD/JPY pairs and gold run 55-70%.
+ASIA_ACTIVE_SHARE = 0.55

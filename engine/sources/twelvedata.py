@@ -45,6 +45,38 @@ def parse(raw: bytes, name: str, today: pd.Timestamp | None = None) -> pd.DataFr
     return df[(df.index < today) & (df.index.dayofweek < 5)]
 
 
+def parse_hourly(raw: bytes, name: str, now: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Hourly bars in UTC, weekend hours kept (the Sunday reopen is the start
+    of the Asia session); the bar still forming is dropped."""
+    now = (now or pd.Timestamp.now(tz="UTC")).tz_localize(None)
+    body = json.loads(raw)
+    if body.get("status") != "ok":
+        raise FetchError(f"Twelve Data {name} 1h: {body.get('message', 'no data')}")
+    df = pd.DataFrame(body["values"])
+    df.index = pd.to_datetime(df.pop("datetime"))
+    df = df[["open", "high", "low", "close"]].astype(float).sort_index()
+    df = df[~df.index.duplicated(keep="last")]
+    return df[df.index + pd.Timedelta(hours=1) <= now]
+
+
+def fetch_hourly(symbols: dict[str, str], bars: int = 1500) -> tuple[dict, dict]:
+    """{symbol: name} -> ({name: hourly OHLC, UTC}, {name: error}). ~9 weeks."""
+    key = os.environ.get("TWELVEDATA_API_KEY")
+    if not key:
+        return {}, {name: "TWELVEDATA_API_KEY is not set" for name in symbols.values()}
+    out, errors = {}, {}
+    for i, (symbol, name) in enumerate(symbols.items()):
+        if i:
+            time.sleep(SPACING_SECONDS)
+        try:
+            out[name] = parse_hourly(get(URL, retries=1, params={
+                "symbol": symbol, "interval": "1h", "outputsize": bars,
+                "timezone": "UTC", "apikey": key}), name)
+        except Exception as e:  # noqa: BLE001
+            errors[name] = str(e)
+    return out, errors
+
+
 def fetch(symbols: dict[str, str], days: int = 1600
           ) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
     """{symbol: name} -> ({name: OHLC frame}, {name: error})."""

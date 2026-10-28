@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ALIASES, ASSET_LABEL, clearCache, daysAgo, fmtTime, getJson, login, logout, NotLoggedIn } from "./data.js";
+import { ALIASES, ASSET_LABEL, asiaWindowLocal, clearCache, daysAgo, fmtTime, getJson, login, logout, NotLoggedIn, useAsiaSwitch } from "./data.js";
 import { go, href, useRoute } from "./router.js";
 import { Failed, Loading } from "./components/ui.jsx";
 import Home from "./pages/Home.jsx";
@@ -82,7 +82,7 @@ function CommandLine({ snap }) {
   );
 }
 
-function TitleBar({ route, snap, onRefresh }) {
+function TitleBar({ route, snap, onRefresh, asia, toggleAsia }) {
   const id = route.id;
   const name = id ? (ASSET_LABEL[id] ? `${id} ${ASSET_LABEL[id]}` : id) : "BELLCAP";
   return (
@@ -91,6 +91,10 @@ function TitleBar({ route, snap, onRefresh }) {
       <div className="bar">
         <button onClick={onRefresh}>1) Refresh</button>
         <a className="btn blue" href={href("track")}>97) Track record</a>
+        <button onClick={toggleAsia} title={`Asia session ${asiaWindowLocal()} your time. On: only markets that move in Asia, only events inside it.`}
+                style={asia ? { background: "var(--amber)", color: "#000", fontWeight: "bold" } : undefined}>
+          98) ASIA {asia ? "ON" : "OFF"}
+        </button>
         <span className="title">{TITLES[route.page] || "BellCap"}</span>
       </div>
     </div>
@@ -135,6 +139,7 @@ function Login({ onDone }) {
 export default function App() {
   const route = useRoute();
   const [state, setState] = useState({ snap: null, error: null, needLogin: false });
+  const [asia, toggleAsia] = useAsiaSwitch();
   const load = () => {
     clearCache();
     setState({ snap: null, error: null, needLogin: false });
@@ -155,7 +160,7 @@ export default function App() {
   return (
     <div className="app">
       <CommandLine snap={snap} />
-      <TitleBar route={route} snap={snap} onRefresh={load} />
+      <TitleBar route={route} snap={snap} onRefresh={load} asia={asia} toggleAsia={toggleAsia} />
       <nav className="menu">
         {MENU.map(([key, label], i) => (
           <a key={key} href={href(key)}
@@ -164,7 +169,7 @@ export default function App() {
           </a>
         ))}
       </nav>
-      <main><Page snap={snap} id={route.id} /></main>
+      <main><Page snap={snap} id={route.id} asia={asia} /></main>
       <Band snap={snap} />
       <div className="status">
         <span>Model {snap.model_version}</span>

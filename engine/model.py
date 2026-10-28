@@ -62,7 +62,7 @@ def build(data: Collected, health: dict | None = None,
             last_close[name] = rnd(s.iloc[-1], 6)
 
     now = pd.Timestamp.now(tz="UTC")
-    warnings = [f"{r['name']}: {r['status']}" for r in (health or {}).get("series", [])
+    warnings = [f"{r['name']}: {r.get('note') or r['status']}" for r in (health or {}).get("series", [])
                 if r["status"] != "ok"]
     snapshot = {
         "model_version": MODEL_VERSION,

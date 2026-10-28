@@ -1,10 +1,10 @@
-import { ASSET_LABEL, fmt, ordinal } from "../data.js";
+import { ASSET_LABEL, asiaActive, fmt, ordinal } from "../data.js";
 import { go } from "../router.js";
 import { Lean, Panel, RangeBar, Signed, Spark } from "../components/ui.jsx";
 
 const GROUPS = [["metals", "Metals"], ["indices", "Stock indices"], ["energy", "Energy"]];
 
-export default function Markets({ snap }) {
+export default function Markets({ snap, asia }) {
   const cards = Object.fromEntries(snap.ideas.map((c) => [c.name, c]));
   return (
     <Panel num={4} title="Markets" aside="click a row for drivers and the thesis" bodyClass="scroll">
@@ -17,7 +17,7 @@ export default function Markets({ snap }) {
         <tbody>
           {GROUPS.map(([g, label]) => [
             <tr key={g} className="group"><td className="l" colSpan={12}>{label}</td></tr>,
-            ...snap.assets.filter((a) => a.group === g).map((a) => {
+            ...snap.assets.filter((a) => a.group === g && (!asia || asiaActive(snap, a.name))).map((a) => {
               const m = snap.markets[a.name] || {};
               return (
                 <tr key={a.name} className="click" onClick={() => go(`market/${a.name}`)}>
