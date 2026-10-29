@@ -38,6 +38,18 @@ def _timed(fn):
         return None, f"{type(e).__name__}: {e}", round(time.time() - t0, 1)
 
 
+def merge(frames: list[pd.DataFrame]) -> pd.DataFrame:
+    """One column per series. Where two sources give the same series (the
+    BIS and an official feed for a policy rate), the later source wins on any
+    date it has a value and the earlier one fills the rest."""
+    if not frames:
+        return pd.DataFrame()
+    macro = pd.concat(frames, axis=1).sort_index()
+    if macro.columns.duplicated().any():
+        macro = macro.T.groupby(level=0, sort=False).last().T
+    return macro
+
+
 def collect() -> Collected:
     frames, status = [], []
     for module in SOURCES:
@@ -46,7 +58,7 @@ def collect() -> Collected:
                        "ok": error is None, "error": error, "seconds": secs})
         if frame is not None:
             frames.append(frame)
-    macro = pd.concat(frames, axis=1).sort_index() if frames else pd.DataFrame()
+    macro = merge(frames)
 
     result, error, secs = _timed(prices.fetch)
     bars, price_sources, price_errors = result or ({}, {}, {})

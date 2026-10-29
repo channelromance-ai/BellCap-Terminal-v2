@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from .sources import (bis, boc, bundesbank, cboe, cftc, ecb, eurostat, mof,
-                      nyfed, oecd, prices, treasury)
+                      nyfed, oecd, policy, prices, treasury)
 
 
 @dataclass(frozen=True)
@@ -62,6 +62,7 @@ SOURCES = {
     # changes at a meeting, so age alone allows 21 days. doctor.py separately
     # flags a rate whose central bank has decided since the BIS last updated it.
     bis: [Spec(f"{c}.POLICY", f"{c} policy rate", "policy", 21) for c in CCYS],
+    policy: [],     # official USD/CAD/EUR rates, merged over the BIS columns (no rows of their own)
     # Lags follow the NATIONAL release, which is when the market learned the
     # number; the OECD reposts it later, but in a live run a value that isn't
     # posted yet simply isn't there, so only the backtest needs this rule.

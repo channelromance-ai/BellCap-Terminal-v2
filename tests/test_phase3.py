@@ -121,3 +121,15 @@ class PolicyDecisions(unittest.TestCase):
         self.assertEqual(rows[0]["status"], "stale")             # RBNZ decided after BIS's 16 Oct update
         self.assertIn("Official Cash Rate decided 2026-10-28", rows[0]["note"])
         self.assertEqual(rows[1]["status"], "ok")                # RBA's meeting hasn't happened yet
+
+
+class PolicyMerge(unittest.TestCase):
+    def test_official_feed_overrides_bis_and_bis_fills_gaps(self):
+        from engine.collect import merge
+        days = pd.to_datetime(["2026-10-15", "2026-10-28", "2026-10-29"])
+        bis = pd.DataFrame({"USD.POLICY": [3.875, None, None], "NZD.POLICY": [2.75, None, None]}, index=days)
+        official = pd.DataFrame({"USD.POLICY": [None, 3.875, 3.625]}, index=days)
+        m = merge([bis, official])
+        self.assertEqual(list(m.columns), ["USD.POLICY", "NZD.POLICY"])
+        self.assertEqual(m["USD.POLICY"].tolist(), [3.875, 3.875, 3.625])     # official newest wins
+        self.assertEqual(m["NZD.POLICY"].dropna().index[-1], days[0])          # BIS-only stays as it was
